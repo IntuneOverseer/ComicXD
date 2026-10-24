@@ -1,0 +1,7 @@
+*.keystore
+*.jks
+keystore.properties
+android/**/build/
+*.bak
+node_modules/
+.DS_Store

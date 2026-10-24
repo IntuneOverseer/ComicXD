@@ -1,0 +1,214 @@
+<section id="home">
+  <header class="top">
+    <div class="brand"><h1>Comic<b>XD</b></h1><span id="brand-sub"></span></div>
+    <div class="topbtns"><button class="btn ghost" id="bib-btn" type="button" aria-label="Biblioteca">📚 <span>Biblioteca</span></button><button class="btn ghost" id="chat-btn" type="button" aria-label="Chat">💬 <span>Chat</span></button><button class="btn ghost" id="perfil-btn" type="button" aria-label="Perfil e idioma">☺ <span id="perfil-btn-t">Perfil</span></button><button class="btn" id="abrir-top" type="button"></button></div>
+  </header>
+  <main>
+    <section id="ola" aria-live="polite"><div class="ola-tx"><span id="ola-oi" class="ola-oi"></span><h2 id="ola-q"></h2><p id="ola-sug" hidden></p></div><button class="ib" id="ola-edit" type="button" aria-label="Alterar nome">✎</button><form id="ola-form" hidden><label for="ola-nome"><span>Como devo te chamar?</span></label><div class="ola-row"><input id="ola-nome" maxlength="24" autocomplete="nickname" placeholder="Seu apelido"><button class="btn" type="submit">Salvar</button></div></form></section>
+    <div id="lembrete" role="alert" hidden><div class="lem-tx"><b id="lem-t"></b><span id="lem-c"></span></div><div class="lem-bt"><button class="btn" id="lem-ok" type="button">Ler agora</button><button class="ib" id="lem-x" type="button" aria-label="Fechar">✕</button></div></div>
+    <nav id="abas" role="tablist" aria-label="Tipo de leitura"><button role="tab" type="button" data-k="hq"><span>HQ</span><small>guiada</small></button><button role="tab" type="button" data-k="manga"><span>Mangá</span><small>PDF · RTL · webtoon</small></button></nav>
+    <p id="vazio" class="libmsg" hidden></p>
+    <div id="recent" hidden>
+      <h2 class="sec">Continuar lendo</h2>
+      <div id="herobox"></div>
+      <div id="shelf" hidden><h2 class="sec" style="margin-top:26px">Minha estante</h2><ul></ul></div>
+      <p id="libmsg" class="libmsg" hidden></p>
+    </div>
+    <label id="drop" tabindex="0">
+      <strong id="drop-t"></strong>
+      <small id="drop-fmt"></small>
+      <small id="drop-modo" class="dm"></small>
+      <span class="btn">Escolher arquivo</span>
+      <input id="file" type="file" multiple hidden>
+    </label>
+    <div id="loading" hidden><div class="box"><div class="spin"></div><span id="loadmsg">Abrindo a HQ…</span></div></div>
+    <div id="err" role="alert" hidden></div>
+    <div class="how how-hq">
+      <div><h3>Ler</h3><p><span class="so-toque">Toque na <b>direita</b> da tela (ou deslize para a esquerda) para avançar; na <b>esquerda</b> para voltar.</span><span class="so-web">Use a <b>roda do mouse</b>, as setas <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> <kbd>←</kbd> ou a <b>barra de espaço</b>; clicar na lateral também passa.</span> <span>A câmera vai quadro a quadro e nunca pula um balão.</span></p></div>
+      <div><h3>Menu e tela cheia</h3><p><span class="so-toque">Toque no <b>centro</b> para mostrar as barras: biblioteca, páginas, guiada ou página inteira, <b>Aa</b> e <b>⛶</b> (tela cheia).</span><span class="so-web">As barras ficam sempre visíveis. <b>⛶ Tela cheia</b> (ou tecla <kbd>F</kbd>) deixa só a HQ; clique no centro para ver o menu e <kbd>Esc</kbd> para sair.</span></p></div>
+      <div><h3>Zoom livre</h3><p><span class="so-toque"><b>Dois toques no centro</b> ou <b>pinça</b> dão zoom. Arraste para mover.</span><span class="so-web"><b>Ctrl + roda</b> (ou duplo clique) dá zoom; arraste ou use a roda para mover.</span> <span>Dois toques/cliques de novo voltam à página inteira.</span></p></div>
+    </div>
+    <div class="how how-mg">
+      <div><h3>Ler mangá</h3><p><span class="so-toque">Toque na <b>esquerda</b> da tela (ou deslize para a direita) para avançar; na <b>direita</b> para voltar.</span><span class="so-web">Use as setas <kbd>←</kbd> para avançar e <kbd>→</kbd> para voltar, a roda do mouse ou a barra de espaço.</span></p></div>
+      <div><h3>Modos de leitura</h3><p>No menu, troque entre <b>Mangá</b> (direita para esquerda), <b>Ocidental</b>, <b>Vertical</b> e <b>Webtoon</b> (rolagem contínua). O app lembra o modo de cada obra.</p></div>
+      <div><h3>Bordas e fundo</h3><p>O botão <b>✂ Cortar bordas</b> tira as margens da página. Em <b>Aa</b> você escolhe o fundo: preto, cinza ou branco.</p></div>
+    </div>
+  </main>
+  <button class="btn" id="fab" type="button"></button>
+  <div id="perfil" hidden role="dialog" aria-label="Perfil e idioma"><div class="dc">
+    <h3>Perfil e idioma</h3>
+    <label><span>Seu apelido</span><input id="pf-nome" maxlength="24" autocomplete="nickname" placeholder="Seu apelido"></label>
+    <div><span class="pf-t">Avatar</span><div id="pf-av" class="av-grid"></div></div>
+    <div><span class="pf-t">Cor do app</span><div id="pf-temas" class="tema-grid"></div></div>
+    <label><span>Idioma</span><select id="pf-lang"><option value="auto">Automático (idioma do aparelho)</option><option value="pt">Português</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option></select></label>
+    <label class="ck"><input type="checkbox" id="pf-lem"><span><span>Lembrete para ler</span><small style="display:block">Avisa no horário escolhido, pelo relógio e fuso do aparelho.</small></span></label>
+    <label><span>Horário do lembrete</span><input type="time" id="pf-lem-h" value="12:00"></label>
+    <button class="btn" id="pf-lem-teste" type="button">Testar lembrete</button>
+    <button class="btn" id="pf-ok" type="button">Salvar</button>
+  </div></div>
+  <footer class="note" id="rodape"></footer>
+  <footer class="note" id="assinatura" style="text-align:center;margin-top:6px"></footer>
+</section>
+
+<div id="fim" hidden role="dialog" aria-live="polite" aria-labelledby="fim-t"><div class="fim-box">
+  <div class="fim-i" aria-hidden="true">✓</div>
+  <h3 id="fim-t"></h3><p id="fim-p"></p>
+  <button type="button" class="btn" id="fim-lib"></button>
+  <button type="button" class="btn ghost" id="fim-x"></button>
+</div></div>
+<div id="imp" hidden role="alertdialog" aria-live="polite" aria-labelledby="imp-t"><div class="imp-box">
+  <div class="imp-top"><div class="spin"></div><h3 id="imp-t">Importando para a biblioteca…</h3></div>
+  <p id="imp-sub">Por favor, aguarde. Não feche o app até terminar.</p>
+  <p id="imp-nome"></p>
+  <div class="prep-bar"><i id="imp-i"></i></div>
+  <div class="prep-info"><span id="imp-n"></span><span id="imp-eta"></span></div>
+  <div class="acts"><button class="btn ghost" id="imp-x" type="button">Cancelar</button></div>
+</div></div>
+<div id="prep" hidden>
+  <div class="prep-box">
+    <div class="prep-capa"><img id="prep-capa" alt=""></div>
+    <h2 id="prep-nome">—</h2>
+    <p id="prep-txt">Preparando os quadros…</p>
+    <div class="prep-bar"><i id="prep-i"></i></div>
+    <div class="prep-info"><span id="prep-n">0 de 0 páginas</span><span id="prep-t"></span></div>
+    <small>A leitura guiada é montada antes de você ler. Assim a passagem de quadros não engasga. Só acontece na primeira vez de cada HQ.</small>
+    <div class="acts"><button class="btn ghost" id="prep-cancel" type="button">Cancelar</button><button class="btn" id="prep-ler" type="button">Ler já</button></div>
+  </div>
+</div>
+
+<section id="reader" hidden>
+  <div id="wrap" tabindex="-1" aria-label="Página da HQ">
+    <canvas id="gl"></canvas>
+    <svg id="msk" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path id="mskp" fill-rule="evenodd"/></svg>
+    <div id="work" hidden><div class="spin"></div><span>analisando</span></div>
+    <div id="wt" hidden></div>
+    <div id="tom" style="display:none"></div>
+    <div id="toast"></div>
+    <div id="dica" hidden role="dialog" aria-label="Como usar"><div class="dc">
+      <h3 class="dica-hq">Como ler</h3><h3 class="dica-mg">Como ler mangá</h3>
+      <ul class="dica-hq">
+        <li><b>Avançar</b><span class="so-toque"> toque na direita ou deslize para a esquerda</span><span class="so-web"> clique na direita, roda do mouse ou <kbd>→</kbd> <kbd>espaço</kbd></span></li>
+        <li><b>Voltar</b><span class="so-toque"> toque na esquerda</span><span class="so-web"> clique na esquerda ou <kbd>←</kbd></span></li>
+        <li><b>Menu e páginas</b><span class="so-toque"> toque no centro</span><span class="so-web"> clique no centro</span></li>
+        <li><b>Zoom livre</b><span class="so-toque"> pinça ou dois toques; dois toques de novo voltam</span><span class="so-web"> Ctrl + roda ou dois cliques</span></li>
+        <li><b>Aa</b><span> ajustes: velocidade, <b>corte seco</b> (sem animação), modo escurecido</span></li>
+      </ul>
+            <ul class="dica-mg">
+        <li><b>Avançar</b><span class="so-toque"> toque na esquerda ou deslize para a direita</span><span class="so-web"> clique na esquerda, roda do mouse ou <kbd>←</kbd> <kbd>espaço</kbd></span></li>
+        <li><b>Voltar</b><span class="so-toque"> toque na direita ou deslize para a esquerda</span><span class="so-web"> clique na direita ou <kbd>→</kbd></span></li>
+        <li><b>Modos</b><span> Mangá, Ocidental, Vertical ou Webtoon na barra de baixo</span></li>
+        <li><b>Cortar bordas</b><span> ✂ tira as margens da página</span></li>
+        <li><b>Tom da página (Aa)</b><span> amarelo, azul, sépia e outras cores para cansar menos a vista</span></li>
+      </ul>
+      <button class="btn" id="dica-ok" type="button">Entendi</button>
+    </div></div>
+  </div>
+  <div id="lv" role="toolbar" aria-label="Leitura livre">
+    <button type="button" id="lv-up" aria-label="Rolar para cima" title="Rolar para cima">▲</button>
+    <button type="button" id="lv-mais" aria-label="Mais zoom" title="Mais zoom">＋</button>
+    <button type="button" id="lv-w" aria-label="Ajustar à largura" title="Ajustar à largura">↔</button>
+    <button type="button" id="lv-fit" aria-label="Ajustar à tela" title="Ajustar à tela"><span id="lv-z">100%</span></button>
+    <button type="button" id="lv-menos" aria-label="Menos zoom" title="Menos zoom">－</button>
+    <button type="button" id="lv-dn" aria-label="Rolar para baixo" title="Rolar para baixo">▼</button>
+  </div>
+  <div id="topo" class="barra">
+    <button class="ib" id="back" aria-label="Voltar para a biblioteca">‹ <span>Biblioteca</span></button>
+    <div class="title" id="rtitle">—</div>
+    <button class="ib" id="compacto" aria-label="Modo compacto" aria-pressed="false" title="Modo compacto"><span class="ico">▯</span> <span>Modo compacto</span></button>
+    <button class="ib" id="full" aria-label="Tela cheia" hidden>⛶ <span>Tela cheia</span></button>
+    <button class="ib" id="chat-btn2" type="button" aria-label="Chat">💬</button>
+    <button class="ib" id="cfg" aria-expanded="false" aria-controls="ajustes">Aa</button>
+  </div>
+  <div id="ajustes" hidden role="dialog" aria-label="Ajustes da leitura">
+    <h3>Ajustes</h3>
+    <div class="hq-only"><div class="letra"><button class="rbtn" id="zm" aria-label="Letra menor">A−</button><span id="letra-v">—</span><button class="rbtn" id="zp" aria-label="Letra maior">A+</button></div>
+    <small>Tamanho da letra = quão perto a câmera chega dos quadros. Mudar refaz a preparação da HQ (uma vez).</small></div>
+    <label class="hq-only"><span>Cores da página</span><select id="cfg-pb"><option value="normal">Colorido (original)</option><option value="pb">Preto e branco</option><option value="forte">Preto e branco forte (contornos marcados)</option><option value="verm">Preto, branco e vermelho</option></select><small>Só na aba HQ.</small></label>
+    <label><span>Tom da página</span><select id="cfg-tom"><option value="normal">Normal</option><option value="amarelo">Amarelo</option><option value="sepia">Sépia</option><option value="ambar">Âmbar (leitura à noite)</option><option value="azul">Azul</option><option value="verde">Verde</option><option value="rosa">Rosa</option></select></label>
+    <label><span>Intensidade do tom</span><input id="cfg-tom-i" type="range" min="0.15" max="0.9" step="0.05"></label>
+    <label class="ck"><input type="checkbox" id="cfg-anim"><span><span>Animar transições</span><small style="display:block">Desligado = corte seco, sem animação: máxima fluidez em tablet fraco.</small></span></label>
+    <label><span><span>Velocidade da transição:</span> <span id="cfg-vel-v"></span></span>
+      <input id="cfg-vel" type="range" min="0.2" max="1.2" step="0.1"><small>Menor = mais rápido. Padrão: 0,6 s.</small></label>
+    <label><span>Interface</span>
+      <select id="cfg-ui"><option value="auto">Automática (detecta o aparelho)</option><option value="web">Computador (mouse e teclado)</option><option value="toque">Tablet / celular (toque)</option></select></label>
+    <label><span>Idioma</span><select id="cfg-lang"><option value="auto">Automático (idioma do aparelho)</option><option value="pt">Português</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option></select></label>
+    <label class="apk-only"><span>Efeito ao virar a página</span><select id="cfg-fx"><option value="livro">Livro (página virando)</option><option value="deslizar">Deslizar</option><option value="empilhar">Empilhar</option><option value="cobrir">Cobrir</option><option value="zoom">Zoom suave</option><option value="nenhum">Nenhum (só esmaecer)</option></select><small>Funciona na <b>Página inteira</b> (HQ) e no Mangá. O Webtoon rola direto, sem efeito.</small><small id="fx-aviso" hidden style="color:var(--accent)">⚠ Bloqueado no modo Guiado: toque em “Página inteira” para usar o efeito de virar página.</small></label>
+    <div class="mg-only"><label><span>Qualidade do PDF</span><select id="cfg-pdfq"><option value="auto">Automática</option><option value="alta">Alta (mais nítida)</option><option value="max">Máxima (usa mais memória)</option></select><small>Vale na próxima vez que abrir o PDF.</small></label><label class="ck"><input type="checkbox" id="cfg-crop"><span>Cortar bordas das páginas</span></label>
+    <label><span>Fundo atrás da página</span><select id="cfg-mbg"><option value="preto">Preto</option><option value="cinza">Cinza</option><option value="branco">Branco</option></select></label>
+    <label class="ck"><input type="checkbox" id="cfg-gap"><span>Espaço entre páginas (webtoon)</span></label></div>
+    <div class="hq-only"><label class="ck"><input type="checkbox" id="cfg-entrar"><span>Página inteira antes do 1º quadro</span></label>
+    <label class="ck"><input type="checkbox" id="cfg-sair"><span>Página inteira depois do último quadro</span></label>
+    <label><span>Fora do quadro</span>
+      <select id="cfg-fora"><option value="pagina">Cor da página</option><option value="preto">Preto</option><option value="escura">Escurecido (vê o quadro anterior ao fundo)</option></select></label>
+    <label><span><span>Escurecimento do fora do quadro:</span> <span id="cfg-esc-v"></span></span><input id="cfg-esc" type="range" min="0.3" max="0.95" step="0.05"><small>Maior = mais escuro; menor = vê melhor o quadro anterior ao fundo.</small></label>
+    </div>
+    <button class="btn" id="cfg-dica" type="button">Como usar</button>
+    <button class="btn" id="cfg-ok" type="button">Fechar</button>
+    <div id="diag"></div>
+  </div>
+  <div id="base" class="barra"><div class="painel">
+    <div id="tiras" aria-label="Miniaturas das páginas"><div id="tiras-in"></div></div>
+    <div class="linha"><button class="nav" id="prev" aria-label="Voltar">‹</button><div class="info" id="stat">—</div><button class="nav" id="next" aria-label="Avançar">›</button></div>
+    <input id="slider" type="range" min="1" max="1" value="1" aria-label="Ir para a página">
+    <div class="linha"><div class="seg" id="hqseg" style="flex:1"><button id="m-g" type="button">Guiada</button><button id="m-l" type="button">Página inteira</button></div><div class="seg" id="mseg" style="flex:1"><button type="button" data-m="rtl">Mangá ←</button><button type="button" data-m="ltr">Ocidental →</button><button type="button" data-m="v">Vertical</button><button type="button" data-m="web">Webtoon</button></div><button class="ib" id="mg-crop" type="button" aria-label="Cortar bordas">✂ <span>Cortar bordas</span></button><button class="ib" id="esc" type="button" aria-label="Escurecer fora do quadro">◐ <span>Escurecer</span></button><button class="ib" id="grid-btn" type="button" aria-label="Todas as páginas">▦ <span>Páginas</span></button></div>
+  </div></div>
+  <div id="grade" hidden role="dialog" aria-label="Todas as páginas">
+    <div class="gtop"><button class="ib" id="grade-x" type="button">‹ <span>Voltar</span></button><div class="title">Páginas</div><span id="grade-n"></span></div>
+    <div id="grade-body"></div>
+  </div>
+</section>
+
+<div id="chat" hidden role="dialog" aria-label="Chat entre leitores"><div class="cx">
+  <header class="cx-top"><span class="cx-prompt">&gt;_ comic_chat</span><span id="cx-status"></span><button class="ib" id="cx-pal" type="button" aria-label="Cor do chat" title="Cor do chat">🎨</button><button class="ib" id="cx-min" type="button" aria-label="Minimizar" title="Minimizar">▁</button><button class="ib" id="cx-x" type="button" aria-label="Fechar chat">✕</button></header>
+  <div id="cx-cores" hidden><span class="cx-ct">Cor do chat</span><div id="cx-sws"></div><label class="cx-lk"><input type="checkbox" id="cx-lkaviso"><span>Avisar antes de abrir links</span></label></div>
+  <section id="cx-join">
+    <h3>Chat entre leitores</h3>
+    <form id="cx-join-form"><input id="cx-sala-in" maxlength="32" autocomplete="off" placeholder="Nome da sala"><button class="btn" type="submit">Entrar</button></form>
+    <div id="cx-chips"></div>
+    <p class="cx-note">As mensagens passam direto entre os aparelhos, sem servidor guardando nada. Seu endereço de rede (IP) fica visível para quem está na sala. As conversas ficam só neste aparelho por até 30 dias e depois se apagam sozinhas. Não há moderação central: use Bloquear. Palavras ofensivas são trocadas por ******.</p>
+  </section>
+  <div id="cx-room" class="cx-bar" hidden><span id="cx-sala"></span><button class="cx-chip" id="cx-bloq" type="button">Bloqueados</button><button class="cx-chip" id="cx-limpar" type="button">Limpar</button><button class="cx-chip" id="cx-sair" type="button">Sair da sala</button></div>
+  <div id="cx-bloqs" hidden></div>
+  <div id="cx-msgs" aria-live="polite"></div>
+  <div id="cx-emo" hidden></div>
+  <form id="cx-form" hidden><button type="button" class="ib" id="cx-emo-b" aria-label="Emojis">😊</button><button type="button" class="ib" id="cx-gif-b" aria-label="Enviar GIF">GIF</button><input id="cx-txt" maxlength="400" autocomplete="off" placeholder="Digite uma mensagem"><button class="btn" type="submit" aria-label="Enviar">➤</button></form>
+  <input type="file" id="cx-file" accept="image/gif" hidden>
+  <div id="cx-toast"></div>
+  <i class="cx-rz" data-d="l"></i><i class="cx-rz" data-d="r"></i><i class="cx-rz" data-d="b"></i><i class="cx-rz" data-d="bl"></i><i class="cx-rz" data-d="br"></i>
+  <div id="cx-aviso" hidden><div class="dc"><h3>Chat entre leitores</h3><p>As mensagens passam direto entre os aparelhos, sem servidor guardando nada. Seu endereço de rede (IP) fica visível para quem está na sala. As conversas ficam só neste aparelho por até 30 dias e depois se apagam sozinhas. Não há moderação central: use Bloquear. Palavras ofensivas são trocadas por ******.</p><button class="btn" id="cx-aceito" type="button">Aceitar e entrar</button></div></div>
+</div></div>
+
+<div id="bib" hidden role="dialog" aria-label="Biblioteca"><div class="bb">
+  <header class="bb-top"><button class="ib" id="bib-x" type="button">‹ <span>Voltar</span></button><h2>Biblioteca</h2><button class="btn" id="bib-add" type="button">＋ Adicionar</button></header>
+  <div class="bb-tools"><input id="bib-q" type="search" placeholder="Buscar na biblioteca" autocomplete="off"><select id="bib-ord" aria-label="Ordenar"><option value="recente">Mais recentes</option><option value="nome">Nome (A–Z)</option><option value="tam">Maiores primeiro</option><option value="antigo">Mais antigos</option></select></div>
+  <div id="bib-chips" class="chips"></div>
+  <div id="bib-med"><div class="bar"><i id="bib-med-i"></i></div><div class="lin"><span id="bib-med-t"></span><button class="chip" id="bib-prot" type="button" hidden>Proteger armazenamento</button><button class="chip" id="bib-bkb" type="button">Backup do progresso</button></div><p id="bib-med-av" hidden></p></div>
+  <div id="bib-grid"></div>
+  <p id="bib-vazio" hidden></p>
+  <input type="file" id="bib-file" multiple hidden>
+  <div id="bib-add-s" class="sheet" hidden><div id="bib-add-c" class="dc"></div></div>
+  <div id="bib-menu" class="sheet" hidden><div id="bib-menu-c" class="dc"></div></div>
+  <div id="bib-bk" class="sheet" hidden><div class="dc"><h3>Backup do progresso</h3><p class="info">Copie este texto e guarde. Para restaurar, cole o texto aqui e toque em Restaurar. (Guarda onde você parou e as preferências; os arquivos continuam na biblioteca.)</p><textarea id="bib-bk-t" rows="7" spellcheck="false"></textarea><button class="btn" id="bib-bk-c" type="button">Copiar</button><button class="btn ghost" id="bib-bk-r" type="button">Restaurar</button><button class="btn ghost" id="bib-bk-x" type="button">Fechar</button></div></div>
+</div></div>
+
+<div id="cor-dlg" hidden role="dialog" aria-label="Cor personalizada"><div class="cd">
+  <h3>Cor personalizada</h3>
+  <div class="cd-prev" id="cd-prev"><span class="cd-btn">▶ Continuar</span><span class="cd-chip">Mangá</span><span class="cd-bar"><i></i></span></div>
+  <div class="cd-sec">Cores sugeridas</div>
+  <div class="cd-pal" id="cd-pal"></div>
+  <div class="cd-sec">Ajuste fino</div>
+  <label class="cd-sl"><span>Matiz</span><input type="range" id="cd-h" min="0" max="360"></label>
+  <label class="cd-sl"><span>Intensidade</span><input type="range" id="cd-s" min="10" max="100"></label>
+  <label class="cd-sl"><span>Brilho</span><input type="range" id="cd-l" min="25" max="80"></label>
+  <label class="cd-hex"><span>Código da cor</span><span class="cd-hx"><i id="cd-amostra"></i><input id="cd-hex" maxlength="7" autocomplete="off" spellcheck="false" value="#ff6a3d"></span></label>
+  <div class="cd-acts"><button class="btn ghost" id="cd-x" type="button">Cancelar</button><button class="btn" id="cd-ok" type="button">Aplicar</button></div>
+</div></div>
+
+<div id="link-dlg" hidden role="dialog" aria-label="Link externo"><div class="ld">
+  <h3>Você está saindo do app</h3>
+  <p>Este link abre um <b>site externo</b>, fora do ComicXD. O app não verifica o conteúdo dele. Confira o endereço:</p>
+  <code id="ld-url"></code>
+  <p class="ld-q">Tem certeza que deseja acessar?</p>
+  <label class="ld-ck"><input type="checkbox" id="ld-nao"><span>Não mostrar este aviso novamente</span></label>
+  <div class="cd-acts"><button class="btn ghost" id="ld-x" type="button">Cancelar</button><button class="btn" id="ld-ok" type="button">Acessar</button></div>
+</div></div>
