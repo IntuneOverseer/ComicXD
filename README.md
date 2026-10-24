@@ -13,6 +13,8 @@ Leitor gratuito e open source de **HQ, mangá e webtoon**. Um único arquivo HTM
 - Chat P2P opcional entre leitores
 
 ## Instalar
+- **Abrir online (sem instalar):** https://intuneoverseer.github.io/ComicXD/ — funciona no navegador do PC; seus arquivos ficam no seu aparelho.
+- **Última versão:** [ComicXD 0.55](https://github.com/IntuneOverseer/ComicXD/releases/tag/v0.55) (APK + HTML)
 - **Android:** baixe o APK em [Releases](../../releases), habilite "instalar apps desconhecidos" para o navegador/gerenciador de arquivos e abra o arquivo. O Play Protect pode avisar por ser um app novo fora da loja.
 - **PC:** baixe `dist/ComicXD-pc.html` e abra no navegador.
 
@@ -33,7 +35,7 @@ Testado em navegador e emulação; uso real em tablet Android em andamento. Bugs
 
 **Features:** CBZ/CBR/PDF/images · guided panel-by-panel mode for comics with smart reading order (local OpenCV) · manga and webtoon modes · library categories (Marvel, DC, Manga, Webtoon, Manhua, Manhwa) · full-page zoom and double pages · themes · PT/EN/JA/KO · optional P2P chat.
 
-**Install:** grab the APK from [Releases](../../releases) (allow unknown sources), or open `dist/ComicXD-pc.html` in your browser.
+**Install:** grab the APK from [Releases](../../releases) (allow unknown sources), open `dist/ComicXD-pc.html` in your browser, or use it online: https://intuneoverseer.github.io/ComicXD/
 
 **Content:** ComicXD ships and downloads no comics. Use files you are entitled to read.
 
