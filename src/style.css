@@ -307,11 +307,13 @@ html[data-modo=web] #grade-body{grid-template-columns:repeat(auto-fill,minmax(12
 #shelf ul.capas .card{border-radius:5px 14px 14px 5px;border-color:rgba(255,255,255,.14);box-shadow:inset 7px 0 0 rgba(0,0,0,.4),0 12px 28px rgba(0,0,0,.55);transition:transform .18s}
 #shelf ul.capas .card:hover,#shelf ul.capas .card:focus-visible{transform:translateY(-4px) rotate(-.6deg)}
 #shelf .card .bd{position:absolute;top:8px;left:14px;z-index:2;padding:3px 8px;border-radius:999px;background:var(--grad);color:var(--on);font:900 11px var(--ui);letter-spacing:.06em;text-transform:uppercase}
-#wt{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;cursor:pointer;scrollbar-width:thin}
+#wt{position:absolute;inset:0;overflow-y:auto;overflow-x:auto;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;cursor:pointer;scrollbar-width:thin}
 #wt[hidden]{display:none}
+#wti{position:relative;min-width:100%}
 #wt .it{position:relative;width:100%;max-width:900px;margin:0 auto;overflow:hidden;background:rgba(128,128,128,.14)}
 #wt .it img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;pointer-events:none}
 #wt.gap .it{margin-bottom:12px}
+#wt.zm .it{width:var(--iw);max-width:none;margin-left:auto;margin-right:auto}
 html:not([data-leitura=manga]) #mseg,html:not([data-leitura=manga]) #mg-crop,html:not([data-leitura=manga]) .mg-only{display:none}
 html[data-leitura=manga] #hqseg,html[data-leitura=manga] #esc,html[data-leitura=manga] .hq-only{display:none}
 #mg-crop.on{border-color:var(--h2);color:var(--h2)}
@@ -523,10 +525,13 @@ html,body{max-width:100%;overflow-x:clip}
   #base .linha{flex-wrap:wrap;gap:6px}
   #base .linha>.seg{flex:1 1 100%!important;min-width:0}
   #mseg{display:grid;grid-template-columns:1fr 1fr;border-radius:20px}
-  #hqseg{display:grid;grid-template-columns:1fr 1fr}
+  #hqseg{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.3fr) minmax(0,.95fr)}
+  #hqseg button{font-size:12px;letter-spacing:0;padding:0 4px;white-space:nowrap}
   .seg button{min-width:0;font-size:13px;letter-spacing:.02em;padding:0 6px}
   #base .linha>.ib{flex:1 1 0;min-width:0;padding:8px 6px;font-size:15px}
   .dc,.sheet .dc{max-width:100%}
   .topbtns{flex-wrap:wrap;gap:6px}
   .topbtns .btn{min-width:0;padding:0 12px}
 }
+
+@media (max-width:330px){#hqseg button{font-size:10.5px}}

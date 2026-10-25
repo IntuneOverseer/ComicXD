@@ -1,4 +1,4 @@
-Object.assign(EN,{'Efeito ao virar a página':'Page turn effect','Livro (página virando)':'Book (page turning)','Deslizar':'Slide','Empilhar':'Stack','Cobrir':'Cover','Zoom suave':'Soft zoom','Nenhum (só esmaecer)':'None (fade only)','Só no modo mangá. O Webtoon rola direto, sem efeito.':'Manga mode only. Webtoon scrolls directly, with no effect.','Qualidade do PDF':'PDF quality','Automática':'Automatic','Alta (mais nítida)':'High (sharper)','Máxima (usa mais memória)':'Maximum (uses more memory)','Vale na próxima vez que abrir o PDF.':'Applies the next time you open the PDF.','Tom da página':'Page tint','Normal':'Normal','Amarelo':'Yellow','Sépia':'Sepia','Âmbar (leitura à noite)':'Amber (night reading)','Azul':'Blue','Verde':'Green','Rosa':'Pink','Intensidade do tom':'Tint strength',
+Object.assign(EN,{'Zoom salvo · vale para todas as páginas':'Zoom saved · applies to all pages','Zoom normal':'Normal zoom','Vertical · rolagem contínua · pinça ou dois toques para zoom':'Vertical · continuous scroll · pinch or double-tap to zoom','Vertical · deslize ou toque embaixo para rolar':'Vertical · swipe or tap at the bottom to scroll',' pinça ou dois toques; o zoom vale para as próximas páginas. No modo Vertical, as páginas rolam em sequência (como o webtoon) e o zoom vale para todas':' pinch or double-tap; the zoom carries to the next pages. In Vertical mode, pages scroll in sequence (like webtoon) and the zoom applies to all','Zoom':'Zoom','Efeito ao virar a página':'Page turn effect','Livro (página virando)':'Book (page turning)','Deslizar':'Slide','Empilhar':'Stack','Cobrir':'Cover','Zoom suave':'Soft zoom','Nenhum (só esmaecer)':'None (fade only)','Só no modo mangá. O Webtoon rola direto, sem efeito.':'Manga mode only. Webtoon scrolls directly, with no effect.','Qualidade do PDF':'PDF quality','Automática':'Automatic','Alta (mais nítida)':'High (sharper)','Máxima (usa mais memória)':'Maximum (uses more memory)','Vale na próxima vez que abrir o PDF.':'Applies the next time you open the PDF.','Tom da página':'Page tint','Normal':'Normal','Amarelo':'Yellow','Sépia':'Sepia','Âmbar (leitura à noite)':'Amber (night reading)','Azul':'Blue','Verde':'Green','Rosa':'Pink','Intensidade do tom':'Tint strength',
 'Como ler mangá':'How to read manga','Avançar':'Next','Voltar':'Back','Modos':'Modes','Tom da página (Aa)':'Page tint (Aa)',
 ' toque na esquerda ou deslize para a direita':' tap the left or swipe right',' clique na esquerda, roda do mouse ou <kbd>←</kbd> <kbd>espaço</kbd>':' click the left, mouse wheel or <kbd>←</kbd> <kbd>space</kbd>',
 ' toque na direita ou deslize para a esquerda':' tap the right or swipe left',' clique na direita ou <kbd>→</kbd>':' click the right or <kbd>→</kbd>',
@@ -15,10 +15,10 @@ const MGBG={preto:[0,0,0],cinza:[40,40,44],branco:[255,255,255]};
 const MGNOME={rtl:['Mangá ←','Manga ←'],ltr:['Ocidental →','Western →'],v:['Vertical','Vertical'],web:['Webtoon','Webtoon']};
 function mgSalvarCfg(){store.set('hq-mg',MG)}
 const ehManga=()=>!!(book&&book.manga);
-const mgDir=()=>ehManga()&&!wtOn?MG.modo:null;
+const mgDir=()=>ehManga()?(wtOn?null:MG.modo):(HQV&&!guided?'v':null);
 let guidedSalvo=null,wtOn=false;
 const pgBlob=async(i,q,pri)=>{const p=book.pages[i];return p.blob||await p.get(q,pri)};
-const wt=$('wt');
+const wt=$('wt');const wti=document.createElement('div');wti.id='wti';wt.append(wti);
 function mgBgCss(){const c=MGBG[MG.bg]||MGBG.preto;return 'rgb('+c[0]+','+c[1]+','+c[2]+')'}
 
 /* corte de bordas: acha a caixa do conteúdo comparando cada ponto com a cor do canto (mediana dos 4 cantos) */
@@ -45,11 +45,11 @@ function cortarCalc(src,sw,sh,soLados){
 
 /* ---------- mudar de modo ---------- */
 function mgEntrar(s){
-  guidedSalvo=guided;guided=false;document.documentElement.dataset.leitura='manga';
+  lzTroca('hq-lz-mg');guidedSalvo=guided;guided=false;document.documentElement.dataset.leitura='manga';
   MG.modo=(s&&s.m)||book.sugModo||MG.modo;if(!MGNOME[MG.modo])MG.modo='rtl';
-  if(MG.modo==='web')wtAbrir();mgUI()}
+  if(MG.modo==='web'||MG.modo==='v')wtAbrir();mgUI()}
 function mgSair(){
-  wtFechar();document.documentElement.removeAttribute('data-leitura');
+  lzTroca('hq-lz');wtFechar();document.documentElement.removeAttribute('data-leitura');
   $('slider').style.direction='';$('prev').onclick=prev;$('next').onclick=next;
   $('prev').setAttribute('aria-label',L('Voltar','Back'));$('next').setAttribute('aria-label',L('Avançar','Next'));
   if(guidedSalvo!==null){guided=guidedSalvo;guidedSalvo=null}
@@ -57,15 +57,17 @@ function mgSair(){
 function mgUI(){
   for(const b of document.querySelectorAll('#mseg button'))b.classList.toggle('on',b.dataset.m===MG.modo);
   $('mg-crop').classList.toggle('on',MG.crop);$('cfg-crop').checked=MG.crop;$('cfg-mbg').value=MG.bg;$('cfg-gap').checked=MG.gap;
-  $('cfg-gap').closest('label').style.display=MG.modo==='web'?'':'none';
+  $('cfg-gap').closest('label').style.display=(MG.modo==='web'||MG.modo==='v')?'':'none';
   const rtl=MG.modo==='rtl';$('slider').style.direction=rtl?'rtl':'';
   $('prev').onclick=rtl?next:prev;$('next').onclick=rtl?prev:next;
   $('prev').setAttribute('aria-label',L(rtl?'Avançar':'Voltar',rtl?'Next':'Back'));$('next').setAttribute('aria-label',L(rtl?'Voltar':'Avançar',rtl?'Back':'Next'));
   wrap.style.background=mgBgCss();wt.style.background=mgBgCss();if(book&&cur){pintarFundo();pedir()}}
 function setMg(m,quieto){
   if(!ehManga()||MG.modo===m||!MGNOME[m])return;const eraWeb=wtOn;MG.modo=m;mgSalvarCfg();
-  if(m==='web'&&!eraWeb)wtAbrir();
-  else if(m!=='web'&&eraWeb){wtFechar();mgRecarregar()}
+  const quer=(m==='web'||m==='v');
+  if(quer&&!eraWeb)wtAbrir();
+  else if(!quer&&eraWeb){wtFechar();mgRecarregar()}
+  else if(quer&&eraWeb)wtZoomIniciar();
   mgUI();if(!quieto)toast(L('Modo: ','Mode: ')+LN(MGNOME[m]));agendarSalvar()}
 function mgRecarregar(){if(!ehManga()||wtOn)return;soltarTudo();book.plans.fill(null);openPage(pi)}
 function mgCrop(on){MG.crop=on;mgSalvarCfg();book.crops.clear();mgUI();
@@ -82,22 +84,22 @@ function wtAbrir(){
   wtLimpar();wtAvisar(true);wtOn=true;wt.hidden=false;wt.classList.toggle('gap',MG.gap);wt.style.background=mgBgCss();
   const fr=document.createDocumentFragment();
   book.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='it';d.dataset.i=i;d.style.aspectRatio=(p.w&&p.h)?p.w+'/'+p.h:'1/1.45';fr.append(d)});
-  wt.append(fr);const bk=book;
-  bk.pages.onDim=i=>{const el=wt.children[i];if(el&&!el.dataset.s){const p=bk.pages[i];el.style.aspectRatio=p.w+'/'+p.h}
+  wti.append(fr);const bk=book;
+  bk.pages.onDim=i=>{const el=wti.children[i];if(el&&!el.dataset.s){const p=bk.pages[i];el.style.aspectRatio=p.w+'/'+p.h}
     // as alturas das paginas chegam aos poucos (PDF): enquanto o leitor nao mexeu, mantem a posicao de retomada e carrega o que esta na tela
-    if(wtOn&&book===bk&&!wtMexeu){const a=wt.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop;wtAgendarVarrer()}};
+    if(wtOn&&book===bk&&!wtMexeu){const a=wti.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop;wtAgendarVarrer()}};
   wtObs=new IntersectionObserver(es=>{for(const e of es){const i=+e.target.dataset.i;if(e.isIntersecting)wtCarregar(i,e.target,bk);else wtLiberar(i,e.target)}},{root:wt,rootMargin:'120% 0px'});
-  for(const el of wt.children)wtObs.observe(el);
-  wtMexeu=false;wtAlvo=pi;clearInterval(wtSeg);wtSeg=setInterval(wtVarrer,1500);wtIr(pi);for(const t of wtTm)clearTimeout(t);wtTm=[0,120,400,900,1800].map(ms=>setTimeout(()=>{if(wtOn&&book===bk){if(!wtMexeu){const a=wt.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop}wtVarrer();wtRepintar()}},ms))}
+  for(const el of wti.children)wtObs.observe(el);
+  wtZoomIniciar();wtMexeu=false;wtAlvo=pi;clearInterval(wtSeg);wtSeg=setInterval(wtVarrer,1500);wtIr(pi);for(const t of wtTm)clearTimeout(t);wtTm=[0,120,400,900,1800].map(ms=>setTimeout(()=>{if(wtOn&&book===bk){if(!wtMexeu){const a=wti.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop}wtVarrer();wtRepintar()}},ms))}
 // carrega direto o que esta perto da tela, sem depender so do IntersectionObserver (na WebView ele pode nao disparar ate o primeiro toque)
 function wtVarrer(){if(!wtOn||!book)return;const h=wt.clientHeight||innerHeight,top=wt.scrollTop-h*1.2,bot=wt.scrollTop+h*2.2,bk=book;
-  for(const el of wt.children){const y=el.offsetTop,b=y+el.offsetHeight;if(b<top||y>bot){if(el.dataset.s)wtLiberar(+el.dataset.i,el)}else if(!el.dataset.s)wtCarregar(+el.dataset.i,el,bk);else if(el.dataset.f)wtFatiasFaltam(el,bk)}}
+  for(const el of wti.children){const y=el.offsetTop,b=y+el.offsetHeight;if(b<top||y>bot){if(el.dataset.s)wtLiberar(+el.dataset.i,el)}else if(!el.dataset.s)wtCarregar(+el.dataset.i,el,bk);else if(el.dataset.f)wtFatiasFaltam(el,bk)}}
 let wtVT=0,wtSeg=0;function wtAgendarVarrer(delay){if(wtVT)return;wtVT=setTimeout(()=>{wtVT=0;wtVarrer()},delay||300)}
 // empurra a WebView a pintar a lista (evita tela branca ate o primeiro toque)
 function wtRepintar(){if(!wtOn)return;const t=wt.scrollTop;requestAnimationFrame(()=>{if(!wtOn)return;wt.scrollTop=t+1;requestAnimationFrame(()=>{if(wtOn&&!wtMexeu)wt.scrollTop=t})})}
 for(const ev of ['pointerdown','touchstart','wheel','keydown'])wt.addEventListener(ev,()=>{wtMexeu=true;wtAvisar(false)},{passive:true,capture:true});
-function wtLimpar(){wtAvisar(false);clearInterval(wtSeg);if(wtObs){wtObs.disconnect();wtObs=null}for(const u of wtUrls.values())URL.revokeObjectURL(u);wtUrls.clear();wt.replaceChildren()}
-function wtFechar(){if(!wtOn&&wt.hidden)return;wtOn=false;wt.hidden=true;wtLimpar()}
+function wtLimpar(){wtAvisar(false);clearInterval(wtSeg);if(wtObs){wtObs.disconnect();wtObs=null}for(const u of wtUrls.values())URL.revokeObjectURL(u);wtUrls.clear();wti.replaceChildren()}
+function wtFechar(){if(!wtOn&&wt.hidden)return;wtOn=false;wt.hidden=true;wtLimpar();VZ=1;wtZoomCss()}
 // ---- pagina comprida de PDF: fatias de ~2000 px empilhadas ----
 function wtFatiasFaltam(el,bk){const p=bk.pages[+el.dataset.i];if(!p||!p.fatia)return;const h=wt.clientHeight||innerHeight,top=wt.scrollTop-h*1.2,bot=wt.scrollTop+h*2.2;
   for(const d of el.children){if(d.firstChild||d.dataset.p)continue;const y=el.offsetTop+d.offsetTop;if(y+d.offsetHeight<top||y>bot)continue;wtFatia(+el.dataset.i,el,d,bk,p)}}
@@ -122,7 +124,7 @@ async function wtCarregar(i,el,bk){
   try{const blob=await pgBlob(i,q,()=>Math.abs(i-pi));if(book!==bk||el.dataset.s!=='1'||!el.isConnected)return;
     const u=URL.createObjectURL(blob);wtUrls.set(i,u);const im=new Image();im.alt='';im.decoding='async';
     im.onload=()=>{if(el.dataset.s!=='1'||book!==bk)return;{const h=wt.clientHeight||innerHeight;if(el.offsetTop+el.offsetHeight>=wt.scrollTop&&el.offsetTop<=wt.scrollTop+h)wtAvisar(false)}const W=im.naturalWidth,H=im.naturalHeight;let r=null;
-      if(MG.crop){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):cortarCalc(im,W,H,true);bk.crops.set('w'+i,r)}
+      if(bk.manga&&MG.crop){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):cortarCalc(im,W,H,true);bk.crops.set('w'+i,r)}
       const cw=r?r[2]:W,ch=r?r[3]:H;el.style.aspectRatio=cw+'/'+ch;
       if(r){im.style.cssText='position:absolute;top:0;width:'+(W/cw*100)+'%;left:-'+(r[0]/cw*100)+'%'}
       el.replaceChildren(im);if(!wtMexeu)wtRepintar()};
@@ -136,11 +138,11 @@ async function wtCarregar(i,el,bk){
       el.onclick=ev=>{ev.stopPropagation();el.onclick=null;el.dataset.t=0;el.textContent='';el.style.color='';delete el.dataset.s;wtVarrer()}}}}   // cancelada ou falhou: libera para tentar de novo quando voltar a ser necessaria
 function wtLiberar(i,el){
   if(!el.dataset.s)return;delete el.dataset.s;delete el.dataset.f;el.replaceChildren();for(const [k,u] of [...wtUrls]){if(k===i||String(k).startsWith(i+':')){wtUrls.delete(k);setTimeout(()=>URL.revokeObjectURL(u),400)}}}
-function wtIr(i){const el=wt.children[i];pi=i;if(el)wt.scrollTop=el.offsetTop;label();agendarSalvar()}
+function wtIr(i){const el=wti.children[i];pi=i;if(el)wt.scrollTop=el.offsetTop;label();agendarSalvar()}
 function wtPos(){
-  const n=wt.children.length;if(!n)return;let k;
+  const n=wti.children.length;if(!n)return;let k;
   if(wt.scrollTop+wt.clientHeight>=wt.scrollHeight-4)k=n-1;
-  else{const y=wt.scrollTop+wt.clientHeight*0.35;let lo=0,hi=n-1;while(lo<hi){const m=(lo+hi+1)>>1;if(wt.children[m].offsetTop<=y)lo=m;else hi=m-1}k=lo}
+  else{const y=wt.scrollTop+wt.clientHeight*0.35;let lo=0,hi=n-1;while(lo<hi){const m=(lo+hi+1)>>1;if(wti.children[m].offsetTop<=y)lo=m;else hi=m-1}k=lo}
   if(k!==pi){pi=k;label();agendarSalvar()}}
 const wtFundo=()=>wt.scrollTop+wt.clientHeight>=wt.scrollHeight-6;
 function wtRolar(d){if(d>0&&wtFundo()){fimMostrar();return}wt.scrollBy({top:d*wt.clientHeight*0.85,behavior:CFG.anim?'smooth':'auto'})}
@@ -153,9 +155,44 @@ wt.addEventListener('wheel',e=>{if(e.deltaY>0&&wtFundo()){const t=performance.no
 wt.addEventListener('pointerdown',e=>e.stopPropagation());
 wt.addEventListener('pointerup',e=>e.stopPropagation());
 wt.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
-wt.addEventListener('click',e=>{const h=wt.clientHeight,y=e.clientY-wt.getBoundingClientRect().top;
-  if(y>h*0.3&&y<h*0.7){if(!barrasFixas())menu(!menuAberto());return}
+wt.addEventListener('click',e=>{const rc=wt.getBoundingClientRect(),h=wt.clientHeight,y=e.clientY-rc.top;
+  if(y>h*0.3&&y<h*0.7){
+    if(wtVert()){const t=performance.now();
+      if(wtTapT&&t-wtTapAt<300){clearTimeout(wtTapT);wtTapT=null;wtZoomSet(VZ>1.05?1:2.2,e.clientX-rc.left,y,true);toast(TR(VZ>1.05?'Zoom salvo · vale para todas as páginas':'Zoom normal'));return}
+      wtTapAt=t;clearTimeout(wtTapT);wtTapT=setTimeout(()=>{wtTapT=null;if(!barrasFixas())menu(!menuAberto())},280);return}
+    if(!barrasFixas())menu(!menuAberto());return}
   if(menuAberto()){menu(false);return}wtRolar(y>=h*0.7?1:-1)});
+
+/* ---------- vertical: rolagem continua (como o webtoon), com o zoom que o leitor escolher ---------- */
+let VZ=1,wtTapT=null,wtTapAt=0,pz=null;
+const wtVert=()=>!!(wtOn&&book&&(book.manga?MG.modo==='v':HQV));
+const vzKey=()=>book&&book.manga?'hq-vz-mg':'hq-vz';
+function wtZoomCss(){const base=Math.min(wt.clientWidth||innerWidth,900);wt.style.setProperty('--iw',(base*VZ)+'px');wt.classList.toggle('zm',VZ>1.001)}
+function wtZoomIniciar(){VZ=wtVert()?Math.min(5,Math.max(1,+store.get(vzKey(),1)||1)):1;wtZoomCss();if(VZ>1.001)wt.scrollLeft=Math.max(0,(wt.scrollWidth-wt.clientWidth)/2)}
+let zAnim=null;
+const zClamp=z=>Math.min(5,Math.max(1,z));
+/* aplica o zoom de verdade (1 vez so): troca a largura das paginas e acerta a rolagem para o ponto do toque ficar no lugar */
+function wtZoomCommit(z,sx,sy,mx,my,salvar){const o=VZ;VZ=zClamp(z);wtZoomCss();wti.style.transform='';wti.style.transformOrigin='';wti.style.willChange='';
+  const k=VZ/o;wt.scrollLeft=VZ>1.001?sx*k-mx:0;wt.scrollTop=sy*k-my;if(salvar)store.set(vzKey(),+VZ.toFixed(2))}
+/* dois toques / roda: animacao suave so com transform (GPU), sem recalcular as paginas a cada quadro */
+function wtZoomSet(z,fx,fy,salvar){z=zClamp(z);if(Math.abs(z-VZ)<0.001||zAnim)return;
+  const sx=wt.scrollLeft+fx,sy=wt.scrollTop+fy,r=z/VZ;
+  if(!wti.animate){wtZoomCommit(z,sx,sy,fx,fy,salvar);return}
+  wti.style.transformOrigin=sx+'px '+sy+'px';wti.style.willChange='transform';
+  zAnim=wti.animate([{transform:'scale(1)'},{transform:'scale('+r+')'}],{duration:(CFG.anim&&!RM.matches)?230:1,easing:'cubic-bezier(.22,.8,.3,1)',fill:'forwards'});
+  zAnim.onfinish=()=>{const a=zAnim;zAnim=null;a.cancel();wtZoomCommit(z,sx,sy,fx,fy,salvar)}}
+const dist2=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+const pto=(t,rc)=>[(t[0].clientX+t[1].clientX)/2-rc.left,(t[0].clientY+t[1].clientY)/2-rc.top];
+wt.addEventListener('touchstart',e=>{if(wtVert()&&e.touches.length===2&&!zAnim){const rc=wt.getBoundingClientRect(),m=pto(e.touches,rc);
+  pz={d:dist2(e.touches),z0:VZ,m0:m,m:m,r:1,sx:wt.scrollLeft+m[0],sy:wt.scrollTop+m[1]};wti.style.transformOrigin=pz.sx+'px '+pz.sy+'px';wti.style.willChange='transform'}},{passive:true});
+/* pinca: so transform enquanto os dedos mexem (suave); o tamanho real das paginas muda uma vez ao soltar */
+wt.addEventListener('touchmove',e=>{if(!pz||!wtVert()||e.touches.length!==2)return;e.preventDefault();
+  const rc=wt.getBoundingClientRect(),m=pto(e.touches,rc);pz.r=zClamp(pz.z0*dist2(e.touches)/pz.d)/pz.z0;pz.m=m;
+  wti.style.transform='translate('+(m[0]-pz.m0[0])+'px,'+(m[1]-pz.m0[1])+'px) scale('+pz.r+')'},{passive:false});
+const pzFim=e=>{if(pz&&(!e.touches||e.touches.length<2)){const q=pz;pz=null;wtZoomCommit(q.z0*q.r,q.sx,q.sy,q.m[0],q.m[1],true)}};
+wt.addEventListener('touchend',pzFim,{passive:true});wt.addEventListener('touchcancel',pzFim,{passive:true});
+wt.addEventListener('wheel',e=>{if(!wtVert()||!e.ctrlKey)return;e.preventDefault();const rc=wt.getBoundingClientRect();wtZoomSet(VZ*Math.exp(-e.deltaY*0.01),e.clientX-rc.left,e.clientY-rc.top,true)},{passive:false});
+new ResizeObserver(()=>{if(wtVert())wtZoomCss()}).observe(wt);
 
 /* ---------- formato do arquivo e modo sugerido ---------- */
 async function mgSugerir(pages){
@@ -179,7 +216,7 @@ function abasUI(){document.documentElement.dataset.aba=aba;if(typeof aplicarTema
   $('drop-modo').textContent=m?L('Vai abrir como mangá: da direita para a esquerda, bordas cortadas, com modos vertical e webtoon.','Opens as manga: right-to-left, cropped borders, with vertical and webtoon modes.'):L('Vai abrir como HQ: leitura guiada, quadro a quadro, com detecção de balões.','Opens as a comic: guided panel-by-panel reading with balloon detection.');
   $('vazio').textContent=m?L('Sua estante de mangá está vazia. Escolha um PDF, CBZ ou EPUB abaixo e a capa aparece aqui.','Your manga shelf is empty. Pick a PDF, CBZ or EPUB below and the cover shows up here.'):L('Nenhuma HQ ainda. Escolha um arquivo abaixo e ela aparece aqui.','No comics yet. Pick a file below and it shows up here.')}
 for(const b of document.querySelectorAll('#abas button'))b.onclick=()=>setAba(b.dataset.k);
-window.__mg=()=>({pi,wtOn,modo:MG.modo,crop:MG.crop,guided,menu:menuAberto(),tw:(texs.get(pi)||{}).w,th:(texs.get(pi)||{}).h,n:book&&book.pages.length,cargas:[...wt.children].filter(e=>e.dataset.s).length,itens:wt.children.length,scrollH:wt.scrollHeight,sc:wt.scrollTop});
+window.__mg=()=>({pi,wtOn,modo:MG.modo,crop:MG.crop,guided,menu:menuAberto(),tw:(texs.get(pi)||{}).w,th:(texs.get(pi)||{}).h,n:book&&book.pages.length,cargas:[...wti.children].filter(e=>e.dataset.s).length,itens:wti.children.length,scrollH:wt.scrollHeight,sc:wt.scrollTop});
 window.__voltar=()=>voltarBiblioteca();
 
 function recusarHQ(files){const e=$('err');$('loading').hidden=true;e.hidden=false;

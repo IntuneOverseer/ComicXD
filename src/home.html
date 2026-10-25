@@ -97,6 +97,7 @@
         <li><b>Avançar</b><span class="so-toque"> toque na esquerda ou deslize para a direita</span><span class="so-web"> clique na esquerda, roda do mouse ou <kbd>←</kbd> <kbd>espaço</kbd></span></li>
         <li><b>Voltar</b><span class="so-toque"> toque na direita ou deslize para a esquerda</span><span class="so-web"> clique na direita ou <kbd>→</kbd></span></li>
         <li><b>Modos</b><span> Mangá, Ocidental, Vertical ou Webtoon na barra de baixo</span></li>
+        <li><b>Zoom</b><span> pinça ou dois toques; o zoom vale para as próximas páginas. No modo Vertical, as páginas rolam em sequência (como o webtoon) e o zoom vale para todas</span></li>
         <li><b>Cortar bordas</b><span> ✂ tira as margens da página</span></li>
         <li><b>Tom da página (Aa)</b><span> amarelo, azul, sépia e outras cores para cansar menos a vista</span></li>
       </ul>
@@ -150,7 +151,7 @@
     <div id="tiras" aria-label="Miniaturas das páginas"><div id="tiras-in"></div></div>
     <div class="linha"><button class="nav" id="prev" aria-label="Voltar">‹</button><div class="info" id="stat">—</div><button class="nav" id="next" aria-label="Avançar">›</button></div>
     <input id="slider" type="range" min="1" max="1" value="1" aria-label="Ir para a página">
-    <div class="linha"><div class="seg" id="hqseg" style="flex:1"><button id="m-g" type="button">Guiada</button><button id="m-l" type="button">Página inteira</button></div><div class="seg" id="mseg" style="flex:1"><button type="button" data-m="rtl">Mangá ←</button><button type="button" data-m="ltr">Ocidental →</button><button type="button" data-m="v">Vertical</button><button type="button" data-m="web">Webtoon</button></div><button class="ib" id="mg-crop" type="button" aria-label="Cortar bordas">✂ <span>Cortar bordas</span></button><button class="ib" id="esc" type="button" aria-label="Escurecer fora do quadro">◐ <span>Escurecer</span></button><button class="ib" id="grid-btn" type="button" aria-label="Todas as páginas">▦ <span>Páginas</span></button></div>
+    <div class="linha"><div class="seg" id="hqseg" style="flex:1"><button id="m-g" type="button">Guiada</button><button id="m-l" type="button">Página inteira</button><button id="m-v" type="button">Vertical</button></div><div class="seg" id="mseg" style="flex:1"><button type="button" data-m="rtl">Mangá ←</button><button type="button" data-m="ltr">Ocidental →</button><button type="button" data-m="v">Vertical</button><button type="button" data-m="web">Webtoon</button></div><button class="ib" id="mg-crop" type="button" aria-label="Cortar bordas">✂ <span>Cortar bordas</span></button><button class="ib" id="esc" type="button" aria-label="Escurecer fora do quadro">◐ <span>Escurecer</span></button><button class="ib" id="grid-btn" type="button" aria-label="Todas as páginas">▦ <span>Páginas</span></button></div>
   </div></div>
   <div id="grade" hidden role="dialog" aria-label="Todas as páginas">
     <div class="gtop"><button class="ib" id="grade-x" type="button">‹ <span>Voltar</span></button><div class="title">Páginas</div><span id="grade-n"></span></div>

@@ -3,7 +3,7 @@
    animacao e so um retangulo texturizado com uma matriz nova. Sem DOM, sem raster, sem redesenho de canvas 2D.
    A analise das paginas e feita antes de ler (tela de preparacao), entao nenhum nucleo trabalha durante a leitura. */
 const wrap=$('wrap'),cv=$('gl'),msk=$('msk'),mskp=$('mskp');
-let pi=0,si=0,guided=store.get('hq-modo','g')==='g',cam={cx:0,cy:0,z:1,r:[0,0,1,1]},anim=null,cur=null,fade=null,VW=1,VH=1,DPR=1,bg=[0,0,0];
+let pi=0,si=0,guided=store.get('hq-modo','g')==='g',HQV=!!store.get('hq-vert',false),cam={cx:0,cy:0,z:1,r:[0,0,1,1]},anim=null,cur=null,fade=null,VW=1,VH=1,DPR=1,bg=[0,0,0];
 const easeK=t=>(1-Math.exp(-5*t))/(1-Math.exp(-5));
 const CFG=Object.assign({vel:0.6,entrar:false,sair:false,fora:'pagina',esc:0.72,anim:true},store.get('hq-cfg',{}));
 if(!store.get('hq-fora15',false)){CFG.fora='escura';store.set('hq-fora15',true);store.set('hq-cfg',CFG)}   // 0.15: liga o modo escurecido (ve o quadro anterior ao fundo)
@@ -87,7 +87,7 @@ function pbAplicar(redesenhar){const m=Object.keys(PBS).find(k=>PBS[k]===PBM)||'
   const w=$('wt');if(w)w.style.filter='';if(redesenhar)pedir()}
 $('cfg-pb').value=Object.keys(PBS).find(k=>PBS[k]===PBM)||'normal';
 $('cfg-pb').onchange=e=>{PBM=PBS[e.target.value]||0;store.set('hq-pb',e.target.value);pbAplicar(true)};pbAplicar(false);
-function fxAtual(){if(!PX||!book||wtOn)return null;if(!book.manga&&guided)return null;return FXS[FXSEL]||null}
+function fxAtual(){if(!PX||!book||wtOn)return null;if(!book.manga&&guided)return null;if(!book.manga&&mgDir()==='v')return null;if(book.manga){if(MG.modo==='v')return null;if(livreWeb()&&(LW||LZ>1.04||LS>0))return null}return FXS[FXSEL]||null}
 let _fxAv=null;
 function fxAviso(){const bloq=!!book&&!book.manga&&guided;if(_fxAv===bloq)return;_fxAv=bloq;const a=$('fx-aviso'),sel=$('cfg-fx');if(!a)return;a.hidden=!bloq;if(sel)sel.disabled=bloq}
 function fxDir(){const m=mgDir()||'ltr';return m==='rtl'?[1,0]:m==='ltr'?[-1,0]:[0,-1]}
@@ -194,7 +194,7 @@ let esperando=false;
 function prefetch(){for(const k of [pi+1,pi+2,pi+3,pi+4,pi+5,pi-1])ensurePlan(k)}
 let openToken=0,firstShow=true,wantPage=0;
 async function openPage(i,last){const tok=++openToken;wantPage=i;fimFechar();if(wtOn){wtIr(i);return}
-  if(livreWeb()&&cur&&curPlan()&&!openPage.semLer){const pp=curPlan();if(!LW){LZ=Math.max(1,cam.z/fitZ());LS=LZ>1.04?cam.z*pp.h:0}LX=Math.min(1,Math.max(0,cam.cx/pp.w));lzSalvar()}
+  lzPersistir();
   let e;try{e=await texDe(i,true)}catch(err){return}if(tok!==openToken||!e||!e.tex)return;
   if(guided&&!plan(i)){$('work').hidden=false;esperando=true;   // so acontece se a HQ foi aberta com "Ler já"
     if(!cur||firstShow){firstShow=false;pi=i;mostrarPagina(e,freeFull(),false);label()}
@@ -233,8 +233,9 @@ function agendarSalvar(){clearTimeout(salvarT);salvarT=setTimeout(()=>{if(anim||
 addEventListener('pagehide',()=>save());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else pedir()});
 let toastT=0;function toast(t){const el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>{el.style.opacity=0},1500)}
-function setMode(g,silencio){guided=g;if(!ehManga())store.set('hq-modo',g?'g':'l');$('m-g').classList.toggle('on',g);$('m-l').classList.toggle('on',!g);
-  if(!book||!cur)return;if(!silencio)toast(TR(g?'Leitura guiada':'Página inteira · pinça ou dois toques para zoom'));
+function botoesHQ(){const v=!ehManga()&&HQV;$('m-g').classList.toggle('on',guided);$('m-l').classList.toggle('on',!guided&&!v);if($('m-v'))$('m-v').classList.toggle('on',!guided&&v)}
+function setMode(g,silencio){guided=g;if(!ehManga())store.set('hq-modo',g?'g':'l');botoesHQ();
+  if(!book||!cur)return;if(!silencio)toast(TR(g?'Leitura guiada':(!ehManga()&&HQV)?'Vertical · deslize ou toque embaixo para rolar':'Página inteira · pinça ou dois toques para zoom'));
   if(g)goStep(si);else{mover(freeFull(),300);label()}}
 
 /* ---------- preparar a HQ antes de ler ---------- */
@@ -256,7 +257,7 @@ function preparar(inicio){return new Promise(res=>{
 /* ---------- modo livre: pinça, arrastar com inercia, dois toques para zoom ---------- */
 function clampFree(c){const p=curPlan(),fit=Math.min(VW/p.w,VH/p.h),z=Math.min(Math.max(c.z,fit),fit*6),q=pose(p,c.cx,c.cy,z/fit);return {cx:q.cx,cy:q.cy,z,r:[0,0,p.w,p.h]}}
 function livreDaqui(){pararAnim();mskOff();const p=curPlan();cam=clampFree({...cam,r:[0,0,p.w,p.h]});
-  guided=false;store.set('hq-modo','l');$('m-g').classList.remove('on');$('m-l').classList.add('on');label()}
+  guided=false;store.set('hq-modo','l');botoesHQ();label()}
 function zoomAt(px,py,k){LW=false;pararAnim();const c={...cam},wx=c.cx+(px-VW/2)/c.z,wy=c.cy+(py-VH/2)/c.z;c.z*=k;c.cx=wx-(px-VW/2)/c.z;c.cy=wy-(py-VH/2)/c.z;cam=clampFree(c);pedir()}
 function panBy(dx,dy){pararAnim();cam=clampFree({...cam,cx:cam.cx-dx/cam.z,cy:cam.cy-dy/cam.z});pedir()}
 function zoomPara(px,py,k){const c={...cam},wx=c.cx+(px-VW/2)/c.z,wy=c.cy+(py-VH/2)/c.z;c.z*=k;c.cx=wx-(px-VW/2)/c.z;c.cy=wy-(py-VH/2)/c.z;mover(clampFree(c),320)}
@@ -269,11 +270,12 @@ function duploToque(x,y){if(livreWeb()&&!guided){if(naPaginaInteira()){LW=false;
 /* ---------- toques: bordas viram na hora; centro = menu (1 toque) ou zoom (2 toques) ---------- */
 const ptr=new Map();let pinch=null,down=null,lastTap=0,tapTimer=null,trilha=[];
 function bordaX(d){if(!book||!cur||!curPlan())return true;const p=curPlan(),meio=VW/2/cam.z;if(p.w*cam.z<=VW*1.02)return true;return d<0?cam.cx<=meio+1:cam.cx>=p.w-meio-1}
+function bordaY(d){if(!book||!cur||!curPlan())return true;const p=curPlan(),meio=VH/2/cam.z;if(p.h*cam.z<=VH*1.02)return true;return d<0?cam.cy<=meio+1:cam.cy>=p.h-meio-1}
 function pos(e){const r=wrap.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
 wrap.addEventListener('pointerdown',e=>{lastInput=performance.now();if(!$('ajustes').hidden){abrirAjustes(false);return}
   wrap.setPointerCapture(e.pointerId);const q=pos(e);ptr.set(e.pointerId,q);
   if(ptr.size===2){const [a,b]=[...ptr.values()];if(guided)livreDaqui();pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),m:[(a[0]+b[0])/2,(a[1]+b[1])/2]};down=null}
-  else{down={x:q[0],y:q[1],t:performance.now(),moved:false,bl:bordaX(-1),br:bordaX(1)};trilha=[[q[0],q[1],performance.now()]]}});
+  else{down={x:q[0],y:q[1],t:performance.now(),moved:false,bl:bordaX(-1),br:bordaX(1),bt:bordaY(-1),bb:bordaY(1)};trilha=[[q[0],q[1],performance.now()]]}});
 wrap.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;lastInput=performance.now();const old=ptr.get(e.pointerId),q=pos(e);ptr.set(e.pointerId,q);
   if(pinch&&ptr.size===2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
     zoomAt(m[0],m[1],d/pinch.d);panBy(m[0]-pinch.m[0],m[1]-pinch.m[1]);pinch={d,m};return}
@@ -281,7 +283,7 @@ wrap.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;lastInpu
   trilha.push([q[0],q[1],performance.now()]);if(trilha.length>6)trilha.shift();
   if(down.moved&&!guided&&!naPaginaInteira())panBy(q[0]-old[0],q[1]-old[1])});
 function deslize(dx,dy){const m=mgDir();
-  if(m==='v'){if(Math.abs(dy)>50&&Math.abs(dy)>1.4*Math.abs(dx)&&naPaginaInteira()){if(dy<0)next();else prev();return true}return false}
+  if(m==='v'){if(Math.abs(dy)>50&&Math.abs(dy)>1.4*Math.abs(dx)&&(naPaginaInteira()||(livreWeb()&&down&&(dy<0?down.bb:down.bt)))){if(dy<0)next();else prev();return true}return false}
   if(Math.abs(dx)>50&&Math.abs(dx)>1.4*Math.abs(dy)&&(guided||naPaginaInteira()||(livreWeb()&&down&&(dx<0?down.br:down.bl)))){if((dx<0)!==(m==='rtl'))next();else prev();return true}return false}
 function up(e){if(!ptr.has(e.pointerId))return;lastInput=performance.now();ultimoToque=e.timeStamp||performance.now();const q=pos(e);ptr.delete(e.pointerId);if(ptr.size<2)pinch=null;
   if(down&&ptr.size===0){const dt=performance.now()-down.t,dx=q[0]-down.x,dy=q[1]-down.y;
@@ -298,13 +300,15 @@ function tap(x,y){const now=performance.now(),m=mgDir(),centro=m==='v'?(y>VH*0.3
   if(centro){if(now-lastTap<300&&tapTimer){clearTimeout(tapTimer);tapTimer=null;lastTap=0;duploToque(x,y);return}
     lastTap=now;clearTimeout(tapTimer);tapTimer=setTimeout(()=>{tapTimer=null;if(!barrasFixas())menu(!menuAberto())},280);return}
   if(menuAberto()){menu(false);return}
-  if(!guided&&!naPaginaInteira()){if(livreWeb()){livrePasso(m==='v'?(y>=VH*0.7?1:-1):(x>=VW*0.7?1:-1))}return}
+  if(!guided&&!naPaginaInteira()){if(livreWeb()){livrePasso(m==='v'?(y>=VH*0.7?1:-1):m==='rtl'?(x>=VW*0.7?-1:1):(x>=VW*0.7?1:-1))}return}
   if(m==='v'){if(y>=VH*0.7)next();else prev()}else if(m==='rtl'){if(x>=VW*0.7)prev();else next()}else{if(x>=VW*0.7)next();else prev()}}
 // roda do mouse / trackpad: passa quadro (guiado) ou pagina; com Ctrl (ou pinça do trackpad) faz zoom; com zoom livre, rola a pagina
 /* leitura livre na web (so HQ): roda rola a pagina na vertical, botoes laterais de zoom; ao fim da pagina passa para a proxima mantendo o zoom */
-const livreWeb=()=>!guided&&!ehManga()&&!wtOn;
-const _lz=store.get('hq-lz',{});let LZ=Math.max(1,+_lz.z||1),LS=+_lz.s||0,LW=!!_lz.w,LX=Math.min(1,Math.max(0,_lz.x==null?.5:+_lz.x)),ovAcc=0,ovLock=0;
-const lzSalvar=()=>store.set('hq-lz',{z:+LZ.toFixed(3),s:+LS.toFixed(1),w:LW,x:+LX.toFixed(3)});
+const livreWeb=()=>!guided&&!wtOn;   /* v0.58: vale tambem para mangá (Mangá, Ocidental, Vertical); webtoon tem rolagem propria */
+let LZK='hq-lz';const _lz=store.get(LZK,{});let LZ=Math.max(1,+_lz.z||1),LS=+_lz.s||0,LW=!!_lz.w,LX=Math.min(1,Math.max(0,_lz.x==null?.5:+_lz.x)),ovAcc=0,ovLock=0;
+const lzSalvar=()=>store.set(LZK,{z:+LZ.toFixed(3),s:+LS.toFixed(1),w:LW,x:+LX.toFixed(3)});
+function lzPersistir(){if(livreWeb()&&cur&&curPlan()&&!openPage.semLer){const pp=curPlan();if(!LW){LZ=Math.max(1,cam.z/fitZ());LS=LZ>1.04?cam.z*pp.h:0}LX=Math.min(1,Math.max(0,cam.cx/pp.w));lzSalvar()}}
+function lzTroca(k){if(k===LZK)return;lzPersistir();LZK=k;const q=store.get(k,{});LZ=Math.max(1,+q.z||1);LS=+q.s||0;LW=!!q.w;LX=Math.min(1,Math.max(0,q.x==null?.5:+q.x))}
 const fitZ=()=>{const p=curPlan();return Math.min(VW/p.w,VH/p.h)};
 function lvZ(){const e=$('lv-z');if(e&&book&&cur)e.textContent=Math.round(cam.z/fitZ()*100)+'%'}
 function livreFluxo(dy){const antes=cam.cy;panBy(0,-dy);lvZ();if(Math.abs(cam.cy-antes)>0.5){ovAcc=0;return}
@@ -380,9 +384,12 @@ async function setZoomLevel(d){const k=Math.max(0,Math.min(ZOOMS.length-1,ZOOMS.
   const r=await preparar(wantPage);if(r==='cancel'&&!book)return;openPage(wantPage)}
 function letraTxt(){$('letra-v').textContent=L('Letra '+(ZOOMS.indexOf(ZOOM)+1)+' de '+ZOOMS.length,'Text size '+(ZOOMS.indexOf(ZOOM)+1)+' of '+ZOOMS.length)}
 $('zm').onclick=()=>setZoomLevel(-1);$('zp').onclick=()=>setZoomLevel(1);
-$('m-g').onclick=()=>{if(!guided)setMode(true)};$('m-l').onclick=()=>{if(guided)setMode(false)};$('next').onclick=next;$('prev').onclick=prev;
+$('m-g').onclick=()=>{if(!guided||wtOn){const era=wtOn;if(era){HQV=false;store.set('hq-vert',false);wtFechar()}setMode(true);if(era)openPage(pi)}};
+$('m-l').onclick=()=>{if(guided||HQV||wtOn){const era=wtOn;HQV=false;store.set('hq-vert',false);if(era)wtFechar();setMode(false);if(era)openPage(pi)}};
+if($('m-v'))$('m-v').onclick=()=>{if(!book||ehManga()||(HQV&&wtOn))return;HQV=true;store.set('hq-vert',true);guided=false;store.set('hq-modo','l');botoesHQ();toast(TR('Vertical · rolagem contínua · pinça ou dois toques para zoom'));wtAbrir();label()};
+$('next').onclick=next;$('prev').onclick=prev;
 $('slider').oninput=()=>{const k=+$('slider').value-1;previewPage(k);tirasIr(k,false)};
-function voltarBiblioteca(){fimOn=false;$('fim').hidden=true;fimT=0;pararAnim();fecharGrade();menu(false);thReset();$('reader').hidden=true;$('home').hidden=false;openToken++;save();soltarTudo();mgSair();renderRecent();renderOla();
+function voltarBiblioteca(){fimOn=false;$('fim').hidden=true;fimT=0;pararAnim();fecharGrade();menu(false);thReset();$('reader').hidden=true;$('home').hidden=false;openToken++;save();lzPersistir();soltarTudo();mgSair();renderRecent();renderOla();
   try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
   if(bibDepois){bibDepois=false;try{bibAbrir(true)}catch(e){}}}
 let saindo=false;
@@ -421,7 +428,7 @@ function openReader(){podeSalvar=false;const s=store.get(book.key,null);firstSho
   try{history.pushState({hq:'leitor'},'')}catch(e){}
   try{if(!gl)iniciarGL()}catch(err){$('reader').hidden=true;$('home').hidden=false;$('err').hidden=false;$('err').textContent=err.message;return}
   if(book.manga)mgEntrar(s);else{document.documentElement.removeAttribute('data-leitura');$('slider').style.direction='';$('prev').onclick=prev;$('next').onclick=next}
-  medir();setMode(guided,true);menu(false);if(!store.get(book.manga?'hq-dica-mg':'hq-dica',false))setTimeout(()=>dica(true),350);else toast(TR('Toque no centro para o menu'));const start=s?Math.min(s.page,book.pages.length-1):0;
+  medir();setMode(guided,true);if(!book.manga&&HQV&&!guided)wtAbrir();menu(false);if(!store.get(book.manga?'hq-dica-mg':'hq-dica',false))setTimeout(()=>dica(true),350);else toast(TR('Toque no centro para o menu'));const start=s?Math.min(s.page,book.pages.length-1):0;
   openPage(start).then(()=>{if(s&&s.step&&guided&&pi===start&&plan(start))goStep(s.step,true);podeSalvar=true;save()})}
 
 /* ---------- dica de uso (1a leitura; reabre em Aa) ---------- */

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.60
+- Mangá e Ocidental: o zoom agora funciona como na "página inteira" da HQ. Pinça ou dois toques para dar zoom, arrastar para mover, e o zoom vale para as próximas páginas. Ao chegar na borda da página, deslizar passa para a seguinte.
+- Vertical (mangá e também nas HQs, com botão novo): rolagem contínua com todas as páginas emendadas, como o Webtoon, e o zoom é você quem define (pinça, dois toques ou Ctrl + roda). O zoom fica salvo. Sem efeito de virar página.
+- Efeitos de virar página ficam no Mangá, no Ocidental e na "página inteira" da HQ (sem efeito com zoom ativo). Vertical e Webtoon não têm efeito.
+- Webtoon continua como estava. O zoom do mangá é guardado separado do zoom da HQ.
+- Zoom do Vertical mais suave: dois toques fazem uma animação e a pinça não recalcula as páginas enquanto os dedos mexem (só ao soltar).
+- Manga & Western: zoom now works like the HQ "full page" mode. Pinch or double-tap to zoom, drag to move, and the zoom carries to the next pages. At the page edge, swiping goes to the next page.
+- Vertical (manga, and now comics too with a new button): continuous scroll with all pages joined, like Webtoon, and you set the zoom (pinch, double-tap or Ctrl + wheel). The zoom is saved. No page-turn effects.
+- Page-turn effects stay in Manga, Western and the comics "full page" mode (none while zoomed). Vertical and Webtoon have no effects.
+- Webtoon is unchanged. Manga zoom is stored separately from HQ zoom.
+- Smoother Vertical zoom: double-tap now animates and pinch no longer re-lays out the pages while your fingers move (only when you let go).
 ## 0.57
 - Chat no celular: o teclado virtual não cobre mais o campo de digitação nem as últimas mensagens (a tela encolhe quando o teclado abre).
 - Chat on phones: the on-screen keyboard no longer covers the text box or the latest messages (the screen shrinks when the keyboard opens).
