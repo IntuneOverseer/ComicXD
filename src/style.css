@@ -504,3 +504,29 @@ html[data-leitura=manga] label.hq-only{display:none!important}
 #fim h3{margin:0;font:900 24px/1.15 var(--ui);font-style:italic;text-transform:uppercase;letter-spacing:.04em;color:var(--h2)}
 #fim p{margin:0 0 6px;color:var(--fg);font:600 16px/1.4 var(--ui)}
 #fim .btn{width:100%}
+
+/* ===== celular (v0.56): nada passa da borda da tela, botoes se encolhem ===== */
+html,body{max-width:100%;overflow-x:clip}
+#bib,#bib .bb{overflow-x:clip}
+@media (max-width:520px){
+  .bb-top{gap:6px}
+  .bb-top h2{min-width:0;font-size:clamp(15px,5.4vw,21px);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bb-top .ib{flex:none;padding:8px 6px;font-size:15px;min-height:44px}
+  .bb-top .btn{flex:none;min-height:42px;padding:0 14px;font-size:14px;letter-spacing:0;gap:6px}
+  .bb-tools{gap:8px}
+  .bb-tools select{min-width:0;max-width:46%}
+  #topo{gap:2px;padding-left:6px;padding-right:6px}
+  #topo .ib,#topo .btn{flex:none;padding:8px 8px;font-size:15px;min-height:44px}
+  #topo .title{font-size:16px;letter-spacing:0}
+  #base{padding-left:8px;padding-right:8px}
+  #base .painel{padding:10px 10px 12px}
+  #base .linha{flex-wrap:wrap;gap:6px}
+  #base .linha>.seg{flex:1 1 100%!important;min-width:0}
+  #mseg{display:grid;grid-template-columns:1fr 1fr;border-radius:20px}
+  #hqseg{display:grid;grid-template-columns:1fr 1fr}
+  .seg button{min-width:0;font-size:13px;letter-spacing:.02em;padding:0 6px}
+  #base .linha>.ib{flex:1 1 0;min-width:0;padding:8px 6px;font-size:15px}
+  .dc,.sheet .dc{max-width:100%}
+  .topbtns{flex-wrap:wrap;gap:6px}
+  .topbtns .btn{min-width:0;padding:0 12px}
+}

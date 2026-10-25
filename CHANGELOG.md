@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.56
+- Interface ajustada para celular: botões e títulos não passam mais da borda da tela (biblioteca, leitor, painel de modos, barra superior).
+- Painel de modos (Mangá/Ocidental/Vertical/Webtoon) em grade 2×2 no celular.
 ## 0.55
 - Aviso de fim de leitura (HQ, mangá, webtoon) com botão para voltar à **biblioteca**.
 - Ordem de leitura do modo guiado melhorada (ordenação por relação entre quadros).
