@@ -162,7 +162,7 @@ function texDe(i,urgente){if(i<0||i>=book.pages.length)return Promise.resolve(nu
   let e=texs.get(i);if(e){if(urgente)e.urg=true;return e.ok}
   e={i,tex:null,w:0,h:0,urg:!!urgente,crop:!!cropQuer()};texs.set(i,e);
   const bk=book;e.ok=(async()=>{let bm=await createImageBitmap(await pgBlob(i),{premultiplyAlpha:'none'});
-    if(e.crop){let r=bk.crops.get(i);if(r===undefined){r=cortarCalc(bm,bm.width,bm.height);bk.crops.set(i,r)}
+    if(e.crop){let r=bk.crops.get(i);if(r===undefined){r=await cortarPg(bk,bm,bm.width,bm.height);bk.crops.set(i,r)}
       if(r){const c2=await createImageBitmap(bm,r[0],r[1],r[2],r[3]);bm.close();bm=c2}}
     if(texs.get(i)!==e){bm.close();return e}
     e.w=bm.width;e.h=bm.height;const m=Math.min(GLI.max||4096,4096),k=Math.min(1,m/Math.max(bm.width,bm.height));

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.64
+- HQs no modo Vertical: a rolagem entre as páginas ficou fluida, sem as travadinhas. O cálculo do "Cortar bordas" agora roda em segundo plano (fora da tela principal) e as páginas são preparadas um pouco antes de aparecer.
+- Comics in Vertical mode: scrolling between pages is now smooth, without the small freezes. The "Trim borders" calculation now runs in the background and pages are prepared slightly before they appear.
+
+## 0.63
+- HQs: o "Cortar bordas" agora detecta melhor as margens (brancas, pretas ou de scanner), mesmo quando cada lado tem uma cor diferente. Funciona em "Página inteira" e em "Vertical". O Mangá continua com o corte de antes.
+- Comics: "Trim borders" now detects margins better (white, black or scanner borders), even when each side has a different color. Works in "Full page" and "Vertical". Manga keeps the previous trimming.
+
 ## 0.62
 - Voltar para a biblioteca: o botão "‹ Biblioteca" e o botão voltar do Android agora levam para a biblioteca (HQ e mangá), não mais para a tela inicial.
 - HQs: novo botão fixo "Cortar bordas" na barra de baixo (✂). Funciona em "Página inteira" e em "Vertical". No modo Guiado, ao tocar nele aparece só um aviso de que não vale ali. Sem mensagem na tela o tempo todo.

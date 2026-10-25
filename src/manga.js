@@ -43,6 +43,44 @@ function cortarCalc(src,sw,sh,soLados){
   const r=[Math.round(x0/k),Math.round(y0/k),Math.round((x1-x0+1)/k),Math.round((y1-y0+1)/k)];
   r[0]=Math.min(r[0],sw-2);r[1]=Math.min(r[1],sh-2);r[2]=Math.max(2,Math.min(r[2],sw-r[0]));r[3]=Math.max(2,Math.min(r[3],sh-r[1]));return r}
 
+/* corte de bordas das HQs: tira, de cada lado, as linhas quase uniformes (margem branca, preta ou de scanner) */
+function cortarScan(d,w,h,k,sw,sh,soLados){
+  const TOL=38,POUT=0.02;
+  const med=a=>{a.sort((p,q)=>p-q);return a[a.length>>1]};
+  const lin=(n,m,at)=>{   // linha/coluna n: uniforme? (m = tamanho da linha, at(n,i) = indice do pixel)
+    const r=[],g=[],b=[];for(let i=0;i<m;i+=2){const q=at(n,i);r.push(d[q]);g.push(d[q+1]);b.push(d[q+2])}
+    const R=med(r.slice()),G=med(g.slice()),B=med(b.slice());let out=0;
+    for(let i=0;i<r.length;i++)if(Math.abs(r[i]-R)>TOL||Math.abs(g[i]-G)>TOL||Math.abs(b[i]-B)>TOL)out++;
+    return out<=r.length*POUT};
+  const row=(n,i)=>(n*w+i)*4,col=(n,i)=>(i*w+n)*4;
+  const cap=0.15;
+  const varre=(total,m,at,max)=>{let a=0;while(a<max&&lin(a,m,at))a++;let z=0;while(z<max&&lin(total-1-z,m,at))z++;return [a,z]};
+  const [l,r]=varre(w,h,col,Math.floor(w*cap));
+  let t=0,bt=0;if(!soLados)[t,bt]=varre(h,w,row,Math.floor(h*cap));
+  const px=Math.round(w*0.004)+1,py=Math.round(h*0.004)+1;
+  let x0=Math.max(0,l-px),x1=Math.min(w-1,w-1-r+px),y0=soLados?0:Math.max(0,t-py),y1=soLados?h-1:Math.min(h-1,h-1-bt+py);
+  const area=(x1-x0+1)*(y1-y0+1)/(w*h);if(area>0.995||area<0.5)return null;
+  const o=[Math.round(x0/k),Math.round(y0/k),Math.round((x1-x0+1)/k),Math.round((y1-y0+1)/k)];
+  o[0]=Math.min(o[0],sw-2);o[1]=Math.min(o[1],sh-2);o[2]=Math.max(2,Math.min(o[2],sw-o[0]));o[3]=Math.max(2,Math.min(o[3],sh-o[1]));return o}
+// o calculo roda num Worker (fora da thread principal): a rolagem nao engasga; sem Worker, cai no caminho antigo
+let cortarW=null,cortarId=0;const cortarP=new Map();
+function cortarWorker(){if(cortarW!==null)return cortarW;cortarW=false;
+  try{if(typeof Worker==='undefined'||typeof OffscreenCanvas==='undefined')return cortarW;
+    const code='const cortarScan='+cortarScan.toString()+';self.onmessage=async e=>{const {id,blob,sw,sh,soLados}=e.data;let r=null;try{const k=Math.min(1,320/Math.max(sw,sh)),w=Math.max(12,Math.round(sw*k)),h=Math.max(12,Math.round(sh*k));const sm=await createImageBitmap(blob,{resizeWidth:w,resizeHeight:h,resizeQuality:"low"});const c=new OffscreenCanvas(w,h),x=c.getContext("2d",{willReadFrequently:true});x.drawImage(sm,0,0);sm.close();r=cortarScan(x.getImageData(0,0,w,h).data,w,h,k,sw,sh,soLados)}catch(er){r=null}postMessage({id,r})}';
+    const wk=new Worker(URL.createObjectURL(new Blob([code],{type:'text/javascript'})));
+    wk.onmessage=e=>{const f=cortarP.get(e.data.id);if(f){cortarP.delete(e.data.id);f(e.data.r)}};
+    wk.onerror=()=>{cortarW=false;for(const f of cortarP.values())f(null);cortarP.clear()};
+    cortarW=wk}catch(e){cortarW=false}
+  return cortarW}
+async function cortarUnif(src,sw,sh,soLados){
+  const wk=(typeof Blob!=='undefined'&&src instanceof Blob)?cortarWorker():false;
+  if(wk)return new Promise(res=>{const id=++cortarId;cortarP.set(id,res);try{wk.postMessage({id,blob:src,sw,sh,soLados})}catch(e){cortarP.delete(id);res(null)}});
+  const k=Math.min(1,320/Math.max(sw,sh)),w=Math.max(12,Math.round(sw*k)),h=Math.max(12,Math.round(sh*k));
+  let d;try{const sm=await createImageBitmap(src,{resizeWidth:w,resizeHeight:h,resizeQuality:'low'});
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(sm,0,0);sm.close();d=x.getImageData(0,0,w,h).data;c.width=c.height=0}catch(e){return null}
+  return cortarScan(d,w,h,k,sw,sh,soLados)}
+const cortarPg=async(bk,src,sw,sh,soLados)=>bk.manga?cortarCalc(src,sw,sh,soLados):await cortarUnif(src,sw,sh,soLados);
+
 /* ---------- mudar de modo ---------- */
 function mgEntrar(s){
   lzTroca('hq-lz-mg');guidedSalvo=guided;guided=false;document.documentElement.dataset.leitura='manga';
@@ -93,11 +131,11 @@ function wtAbrir(){
   bk.pages.onDim=i=>{const el=wti.children[i];if(el&&!el.dataset.s){const p=bk.pages[i];el.style.aspectRatio=p.w+'/'+p.h}
     // as alturas das paginas chegam aos poucos (PDF): enquanto o leitor nao mexeu, mantem a posicao de retomada e carrega o que esta na tela
     if(wtOn&&book===bk&&!wtMexeu){const a=wti.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop;wtAgendarVarrer()}};
-  wtObs=new IntersectionObserver(es=>{for(const e of es){const i=+e.target.dataset.i;if(e.isIntersecting)wtCarregar(i,e.target,bk);else wtLiberar(i,e.target)}},{root:wt,rootMargin:'120% 0px'});
+  wtObs=new IntersectionObserver(es=>{for(const e of es){const i=+e.target.dataset.i;if(e.isIntersecting)wtCarregar(i,e.target,bk);else wtLiberar(i,e.target)}},{root:wt,rootMargin:'200% 0px'});
   for(const el of wti.children)wtObs.observe(el);
   wtZoomIniciar();wtMexeu=false;wtAlvo=pi;clearInterval(wtSeg);wtSeg=setInterval(wtVarrer,1500);wtIr(pi);for(const t of wtTm)clearTimeout(t);wtTm=[0,120,400,900,1800].map(ms=>setTimeout(()=>{if(wtOn&&book===bk){if(!wtMexeu){const a=wti.children[wtAlvo];if(a)wt.scrollTop=a.offsetTop}wtVarrer();wtRepintar()}},ms))}
 // carrega direto o que esta perto da tela, sem depender so do IntersectionObserver (na WebView ele pode nao disparar ate o primeiro toque)
-function wtVarrer(){if(!wtOn||!book)return;const h=wt.clientHeight||innerHeight,top=wt.scrollTop-h*1.2,bot=wt.scrollTop+h*2.2,bk=book;
+function wtVarrer(){if(!wtOn||!book)return;const h=wt.clientHeight||innerHeight,top=wt.scrollTop-h*1.8,bot=wt.scrollTop+h*1.9,bk=book;
   for(const el of wti.children){const y=el.offsetTop,b=y+el.offsetHeight;if(b<top||y>bot){if(el.dataset.s)wtLiberar(+el.dataset.i,el)}else if(!el.dataset.s)wtCarregar(+el.dataset.i,el,bk);else if(el.dataset.f)wtFatiasFaltam(el,bk)}}
 let wtVT=0,wtSeg=0;function wtAgendarVarrer(delay){if(wtVT)return;wtVT=setTimeout(()=>{wtVT=0;wtVarrer()},delay||300)}
 // empurra a WebView a pintar a lista (evita tela branca ate o primeiro toque)
@@ -128,8 +166,10 @@ async function wtCarregar(i,el,bk){
   const q=()=>{if(book!==bk||!el.isConnected||el.dataset.s!=='1')return false;const h=wt.clientHeight||innerHeight,y=el.offsetTop,b=y+el.offsetHeight;return b>=wt.scrollTop-h*1.5&&y<=wt.scrollTop+h*2.5};
   try{const blob=await pgBlob(i,q,()=>Math.abs(i-pi));if(book!==bk||el.dataset.s!=='1'||!el.isConnected)return;
     const u=URL.createObjectURL(blob);wtUrls.set(i,u);const im=new Image();im.alt='';im.decoding='async';
-    im.onload=()=>{if(el.dataset.s!=='1'||book!==bk)return;{const h=wt.clientHeight||innerHeight;if(el.offsetTop+el.offsetHeight>=wt.scrollTop&&el.offsetTop<=wt.scrollTop+h)wtAvisar(false)}const W=im.naturalWidth,H=im.naturalHeight;let r=null;
-      if(bk.manga?MG.crop:HC){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):cortarCalc(im,W,H,true);bk.crops.set('w'+i,r)}
+    im.onload=async()=>{if(el.dataset.s!=='1'||book!==bk)return;{const h=wt.clientHeight||innerHeight;if(el.offsetTop+el.offsetHeight>=wt.scrollTop&&el.offsetTop<=wt.scrollTop+h)wtAvisar(false)}const W=im.naturalWidth,H=im.naturalHeight;let r=null;
+      if(bk.manga?MG.crop:HC){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):await cortarPg(bk,bk.manga?im:blob,W,H,true);bk.crops.set('w'+i,r);if(el.dataset.s!=='1'||book!==bk)return}
+      try{await im.decode()}catch(e){}   // decodifica antes de entrar na tela (fora da thread principal): sem travadinha ao aparecer
+      if(el.dataset.s!=='1'||book!==bk)return;
       const cw=r?r[2]:W,ch=r?r[3]:H;el.style.aspectRatio=cw+'/'+ch;
       if(r){im.style.cssText='position:absolute;top:0;width:'+(W/cw*100)+'%;left:-'+(r[0]/cw*100)+'%'}
       el.replaceChildren(im);if(!wtMexeu)wtRepintar()};
