@@ -314,7 +314,7 @@ html[data-modo=web] #grade-body{grid-template-columns:repeat(auto-fill,minmax(12
 #wt .it img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;pointer-events:none}
 #wt.gap .it{margin-bottom:12px}
 #wt.zm .it{width:var(--iw);max-width:none;margin-left:auto;margin-right:auto}
-html:not([data-leitura=manga]) #mseg,html:not([data-leitura=manga]) #mg-crop,html:not([data-leitura=manga]) .mg-only{display:none}
+html:not([data-leitura=manga]) #mseg,html:not([data-leitura=manga]) .mg-only{display:none}
 html[data-leitura=manga] #hqseg,html[data-leitura=manga] #esc,html[data-leitura=manga] .hq-only{display:none}
 #mg-crop.on{border-color:var(--h2);color:var(--h2)}
 #mseg button{padding:0 8px;font-size:14px}
@@ -535,3 +535,28 @@ html,body{max-width:100%;overflow-x:clip}
 }
 
 @media (max-width:330px){#hqseg button{font-size:10.5px}}
+
+/* 0.61 phone: dica e fim */
+@media (max-width:600px){
+#dica .dc,html[data-leitura=manga] #dica .dc{max-height:100%;overflow-y:auto;display:flex;flex-direction:column}
+#dica ul,html[data-leitura=manga] #dica ul{font-size:13px;gap:6px;margin-bottom:10px}
+#dica h3{font-size:16px;margin-bottom:6px}
+#dica .btn{flex:none;min-height:42px;position:sticky;bottom:0;box-shadow:0 -8px 10px #0f1324}
+#dica,html[data-leitura=manga] #dica{align-items:flex-start;padding:calc(70px + env(safe-area-inset-top)) 12px 90px}
+#fim{padding:16px}
+#fim .fim-box{padding-left:16px;padding-right:16px}
+#fim .btn{font-size:13px;letter-spacing:0;padding-left:10px;padding-right:10px;white-space:normal;line-height:1.2}
+}
+#mg-crop.inativo{opacity:.55}
+@media (max-width:600px){
+#dica .dc>*{flex:none}
+#dica .dc ul{overflow:visible}
+#reader:has(#dica:not([hidden])) #lv{visibility:hidden}
+}
+/* 0.61b: HQ com a mesma barra do mangá (modos numa linha, botões na linha de baixo) */
+#base .linha{flex-wrap:wrap}
+#hqseg{flex:1 1 100%!important}
+@media (max-width:600px){
+#reader:has(#dica:not([hidden])) .barra{visibility:hidden}
+#dica,html[data-leitura=manga] #dica{padding-bottom:16px}
+}

@@ -1,4 +1,4 @@
-Object.assign(EN,{'Zoom salvo · vale para todas as páginas':'Zoom saved · applies to all pages','Zoom normal':'Normal zoom','Vertical · rolagem contínua · pinça ou dois toques para zoom':'Vertical · continuous scroll · pinch or double-tap to zoom','Vertical · deslize ou toque embaixo para rolar':'Vertical · swipe or tap at the bottom to scroll',' pinça ou dois toques; o zoom vale para as próximas páginas. No modo Vertical, as páginas rolam em sequência (como o webtoon) e o zoom vale para todas':' pinch or double-tap; the zoom carries to the next pages. In Vertical mode, pages scroll in sequence (like webtoon) and the zoom applies to all','Zoom':'Zoom','Efeito ao virar a página':'Page turn effect','Livro (página virando)':'Book (page turning)','Deslizar':'Slide','Empilhar':'Stack','Cobrir':'Cover','Zoom suave':'Soft zoom','Nenhum (só esmaecer)':'None (fade only)','Só no modo mangá. O Webtoon rola direto, sem efeito.':'Manga mode only. Webtoon scrolls directly, with no effect.','Qualidade do PDF':'PDF quality','Automática':'Automatic','Alta (mais nítida)':'High (sharper)','Máxima (usa mais memória)':'Maximum (uses more memory)','Vale na próxima vez que abrir o PDF.':'Applies the next time you open the PDF.','Tom da página':'Page tint','Normal':'Normal','Amarelo':'Yellow','Sépia':'Sepia','Âmbar (leitura à noite)':'Amber (night reading)','Azul':'Blue','Verde':'Green','Rosa':'Pink','Intensidade do tom':'Tint strength',
+Object.assign(EN,{'Cortar bordas não vale no modo guiado — use Página inteira ou Vertical':'Trim borders does not apply in guided mode — use Full page or Vertical','Zoom salvo · vale para todas as páginas':'Zoom saved · applies to all pages','Zoom normal':'Normal zoom','Vertical · rolagem contínua · pinça ou dois toques para zoom':'Vertical · continuous scroll · pinch or double-tap to zoom','Vertical · deslize ou toque embaixo para rolar':'Vertical · swipe or tap at the bottom to scroll',' pinça ou dois toques; o zoom vale para as próximas páginas. No modo Vertical, as páginas rolam em sequência (como o webtoon) e o zoom vale para todas':' pinch or double-tap; the zoom carries to the next pages. In Vertical mode, pages scroll in sequence (like webtoon) and the zoom applies to all','Zoom':'Zoom','Efeito ao virar a página':'Page turn effect','Livro (página virando)':'Book (page turning)','Deslizar':'Slide','Empilhar':'Stack','Cobrir':'Cover','Zoom suave':'Soft zoom','Nenhum (só esmaecer)':'None (fade only)','Só no modo mangá. O Webtoon rola direto, sem efeito.':'Manga mode only. Webtoon scrolls directly, with no effect.','Qualidade do PDF':'PDF quality','Automática':'Automatic','Alta (mais nítida)':'High (sharper)','Máxima (usa mais memória)':'Maximum (uses more memory)','Vale na próxima vez que abrir o PDF.':'Applies the next time you open the PDF.','Tom da página':'Page tint','Normal':'Normal','Amarelo':'Yellow','Sépia':'Sepia','Âmbar (leitura à noite)':'Amber (night reading)','Azul':'Blue','Verde':'Green','Rosa':'Pink','Intensidade do tom':'Tint strength',
 'Como ler mangá':'How to read manga','Avançar':'Next','Voltar':'Back','Modos':'Modes','Tom da página (Aa)':'Page tint (Aa)',
 ' toque na esquerda ou deslize para a direita':' tap the left or swipe right',' clique na esquerda, roda do mouse ou <kbd>←</kbd> <kbd>espaço</kbd>':' click the left, mouse wheel or <kbd>←</kbd> <kbd>space</kbd>',
 ' toque na direita ou deslize para a esquerda':' tap the right or swipe left',' clique na direita ou <kbd>→</kbd>':' click the right or <kbd>→</kbd>',
@@ -73,7 +73,12 @@ function mgRecarregar(){if(!ehManga()||wtOn)return;soltarTudo();book.plans.fill(
 function mgCrop(on){MG.crop=on;mgSalvarCfg();book.crops.clear();mgUI();
   if(wtOn){wtAbrir()}else mgRecarregar();toast(TR(on?'Bordas cortadas':'Bordas originais'))}
 for(const b of document.querySelectorAll('#mseg button'))b.onclick=()=>setMg(b.dataset.m);
-$('mg-crop').onclick=()=>{if(ehManga())mgCrop(!MG.crop)};$('cfg-crop').onchange=e=>{if(ehManga())mgCrop(e.target.checked)};
+function hqCrop(){
+  if(guided&&!wtOn){toast(TR('Cortar bordas não vale no modo guiado — use Página inteira ou Vertical'));return}
+  HC=!HC;store.set('hq-crop',HC);book.crops.clear();book.cplans=[];botoesHQ();
+  if(wtOn)wtAbrir();else{soltarTudo();openPage(pi)}
+  toast(TR(HC?'Bordas cortadas':'Bordas originais'))}
+$('mg-crop').onclick=()=>{if(!book)return;if(ehManga())mgCrop(!MG.crop);else hqCrop()};$('cfg-crop').onchange=e=>{if(ehManga())mgCrop(e.target.checked)};
 $('cfg-mbg').onchange=e=>{MG.bg=e.target.value;mgSalvarCfg();mgUI();if(wtOn)wt.style.background=mgBgCss()};
 $('cfg-gap').onchange=e=>{MG.gap=e.target.checked;mgSalvarCfg();wt.classList.toggle('gap',MG.gap)};
 
@@ -124,7 +129,7 @@ async function wtCarregar(i,el,bk){
   try{const blob=await pgBlob(i,q,()=>Math.abs(i-pi));if(book!==bk||el.dataset.s!=='1'||!el.isConnected)return;
     const u=URL.createObjectURL(blob);wtUrls.set(i,u);const im=new Image();im.alt='';im.decoding='async';
     im.onload=()=>{if(el.dataset.s!=='1'||book!==bk)return;{const h=wt.clientHeight||innerHeight;if(el.offsetTop+el.offsetHeight>=wt.scrollTop&&el.offsetTop<=wt.scrollTop+h)wtAvisar(false)}const W=im.naturalWidth,H=im.naturalHeight;let r=null;
-      if(bk.manga&&MG.crop){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):cortarCalc(im,W,H,true);bk.crops.set('w'+i,r)}
+      if(bk.manga?MG.crop:HC){r=bk.crops.has('w'+i)?bk.crops.get('w'+i):cortarCalc(im,W,H,true);bk.crops.set('w'+i,r)}
       const cw=r?r[2]:W,ch=r?r[3]:H;el.style.aspectRatio=cw+'/'+ch;
       if(r){im.style.cssText='position:absolute;top:0;width:'+(W/cw*100)+'%;left:-'+(r[0]/cw*100)+'%'}
       el.replaceChildren(im);if(!wtMexeu)wtRepintar()};

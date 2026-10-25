@@ -3,7 +3,7 @@
    animacao e so um retangulo texturizado com uma matriz nova. Sem DOM, sem raster, sem redesenho de canvas 2D.
    A analise das paginas e feita antes de ler (tela de preparacao), entao nenhum nucleo trabalha durante a leitura. */
 const wrap=$('wrap'),cv=$('gl'),msk=$('msk'),mskp=$('mskp');
-let pi=0,si=0,guided=store.get('hq-modo','g')==='g',HQV=!!store.get('hq-vert',false),cam={cx:0,cy:0,z:1,r:[0,0,1,1]},anim=null,cur=null,fade=null,VW=1,VH=1,DPR=1,bg=[0,0,0];
+let pi=0,si=0,guided=store.get('hq-modo','g')==='g',HQV=!!store.get('hq-vert',false),HC=!!store.get('hq-crop',false),cam={cx:0,cy:0,z:1,r:[0,0,1,1]},anim=null,cur=null,fade=null,VW=1,VH=1,DPR=1,bg=[0,0,0];
 const easeK=t=>(1-Math.exp(-5*t))/(1-Math.exp(-5));
 const CFG=Object.assign({vel:0.6,entrar:false,sair:false,fora:'pagina',esc:0.72,anim:true},store.get('hq-cfg',{}));
 if(!store.get('hq-fora15',false)){CFG.fora='escura';store.set('hq-fora15',true);store.set('hq-cfg',CFG)}   // 0.15: liga o modo escurecido (ve o quadro anterior ao fundo)
@@ -27,7 +27,8 @@ $('compacto').onclick=()=>compactoSet(!document.documentElement.hasAttribute('da
 if(store.get('hq-compacto',false))compactoSet(true);
 document.addEventListener('fullscreenchange',()=>{const on=!!document.fullscreenElement;$('reader').classList.toggle('imersivo',on&&!$('reader').hidden);menu(false);
   if(on&&!$('reader').hidden)toast(TR(document.documentElement.dataset.modo==='web'?'Tela cheia · roda do mouse ou ↑ ↓ passam · clique no centro: menu · Esc sai':'Tela cheia · toque no centro para o menu'))});
-function plan(i){return book.plans[i]}
+const cropQuer=()=>book&&(book.manga?MG.crop:(HC&&!guided&&!wtOn));
+function plan(i){if(!book.manga&&HC&&!guided&&book.cplans&&book.cplans[i])return book.cplans[i];return book.plans[i]}
 function provisorio(w,h){return {w,h,bg:[0,0,0],guiado:false,steps:[{cx:w/2,cy:h/2,z:1,rect:[0,0,w,h]}],provisorio:true}}
 function curPlan(){const p=plan(pi);if(p)return p;return provisorio(cur&&cur.w||1000,cur&&cur.h||1600)}
 function medir(){const b=wrap.getBoundingClientRect();VW=Math.max(2,b.width);VH=Math.max(2,b.height);DPR=Math.min(devicePixelRatio||1,2);
@@ -159,9 +160,9 @@ const texs=new Map();
 const dorme=ms=>new Promise(r=>setTimeout(r,ms));
 function texDe(i,urgente){if(i<0||i>=book.pages.length)return Promise.resolve(null);
   let e=texs.get(i);if(e){if(urgente)e.urg=true;return e.ok}
-  e={i,tex:null,w:0,h:0,urg:!!urgente};texs.set(i,e);
+  e={i,tex:null,w:0,h:0,urg:!!urgente,crop:!!cropQuer()};texs.set(i,e);
   const bk=book;e.ok=(async()=>{let bm=await createImageBitmap(await pgBlob(i),{premultiplyAlpha:'none'});
-    if(bk.manga&&MG.crop){let r=bk.crops.get(i);if(r===undefined){r=cortarCalc(bm,bm.width,bm.height);bk.crops.set(i,r)}
+    if(e.crop){let r=bk.crops.get(i);if(r===undefined){r=cortarCalc(bm,bm.width,bm.height);bk.crops.set(i,r)}
       if(r){const c2=await createImageBitmap(bm,r[0],r[1],r[2],r[3]);bm.close();bm=c2}}
     if(texs.get(i)!==e){bm.close();return e}
     e.w=bm.width;e.h=bm.height;const m=Math.min(GLI.max||4096,4096),k=Math.min(1,m/Math.max(bm.width,bm.height));
@@ -173,7 +174,7 @@ function texDe(i,urgente){if(i<0||i>=book.pages.length)return Promise.resolve(nu
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     if(GLI.v2){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);if(GLI.aniso)gl.texParameterf(gl.TEXTURE_2D,GLI.aniso.TEXTURE_MAX_ANISOTROPY_EXT,2)}
     else gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-    e.tex=t;if(bk.manga&&bk===book&&!bk.plans[i])bk.plans[i]={w:e.w,h:e.h,bg:MGBG[MG.bg]||[0,0,0],guiado:false,steps:[{cx:e.w/2,cy:e.h/2,z:1,rect:[0,0,e.w,e.h]}]};return e})();
+    e.tex=t;if(!bk.manga&&e.crop&&bk===book){(bk.cplans=bk.cplans||[])[i]={w:e.w,h:e.h,bg:[0,0,0],guiado:false,steps:[{cx:e.w/2,cy:e.h/2,z:1,rect:[0,0,e.w,e.h]}]}}if(bk.manga&&bk===book&&!bk.plans[i])bk.plans[i]={w:e.w,h:e.h,bg:MGBG[MG.bg]||[0,0,0],guiado:false,steps:[{cx:e.w/2,cy:e.h/2,z:1,rect:[0,0,e.w,e.h]}]};return e})();
   e.ok.catch(()=>{if(texs.get(i)===e)texs.delete(i)});return e.ok}
 function limparTex(){if(!book)return;for(const [k,v] of [...texs])if(Math.abs(k-pi)>2&&v!==cur&&!(fade&&fade.e===v)&&!(tr&&tr.e===v)){if(v.tex&&gl)gl.deleteTexture(v.tex);v.tex=null;texs.delete(k)}}
 function soltarTudo(){for(const v of texs.values()){if(v.tex&&gl)gl.deleteTexture(v.tex);v.tex=null}texs.clear();cur=null;fade=null;tr=null;anim=null}
@@ -233,9 +234,10 @@ function agendarSalvar(){clearTimeout(salvarT);salvarT=setTimeout(()=>{if(anim||
 addEventListener('pagehide',()=>save());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else pedir()});
 let toastT=0;function toast(t){const el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>{el.style.opacity=0},1500)}
-function botoesHQ(){const v=!ehManga()&&HQV;$('m-g').classList.toggle('on',guided);$('m-l').classList.toggle('on',!guided&&!v);if($('m-v'))$('m-v').classList.toggle('on',!guided&&v)}
+function botoesHQ(){const v=!ehManga()&&HQV;$('m-g').classList.toggle('on',guided);$('m-l').classList.toggle('on',!guided&&!v);if($('m-v'))$('m-v').classList.toggle('on',!guided&&v);if(!ehManga()&&$('mg-crop')){$('mg-crop').classList.toggle('on',HC);$('mg-crop').classList.toggle('inativo',guided)}}
 function setMode(g,silencio){guided=g;if(!ehManga())store.set('hq-modo',g?'g':'l');botoesHQ();
-  if(!book||!cur)return;if(!silencio)toast(TR(g?'Leitura guiada':(!ehManga()&&HQV)?'Vertical · deslize ou toque embaixo para rolar':'Página inteira · pinça ou dois toques para zoom'));
+  if(!book||!cur)return;if(!wtOn&&!ehManga()&&!!cur.crop!==!!cropQuer()){soltarTudo();openPage(pi);if(!silencio)toast(TR(g?'Leitura guiada':'Página inteira · pinça ou dois toques para zoom'));return}
+  if(!silencio)toast(TR(g?'Leitura guiada':(!ehManga()&&HQV)?'Vertical · deslize ou toque embaixo para rolar':'Página inteira · pinça ou dois toques para zoom'));
   if(g)goStep(si);else{mover(freeFull(),300);label()}}
 
 /* ---------- preparar a HQ antes de ler ---------- */
@@ -391,7 +393,7 @@ $('next').onclick=next;$('prev').onclick=prev;
 $('slider').oninput=()=>{const k=+$('slider').value-1;previewPage(k);tirasIr(k,false)};
 function voltarBiblioteca(){fimOn=false;$('fim').hidden=true;fimT=0;pararAnim();fecharGrade();menu(false);thReset();$('reader').hidden=true;$('home').hidden=false;openToken++;save();lzPersistir();soltarTudo();mgSair();renderRecent();renderOla();
   try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
-  if(bibDepois){bibDepois=false;try{bibAbrir(true)}catch(e){}}}
+  bibDepois=false;try{bibAbrir(true)}catch(e){}}
 let saindo=false;
 $('back').onclick=()=>{if(history.state&&history.state.hq==='leitor'){saindo=true;history.back()}else voltarBiblioteca()};
 addEventListener('popstate',()=>{if($('reader').hidden)return;
