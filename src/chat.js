@@ -48,6 +48,8 @@ function statusChat(){const n=CHAT.tr?CHAT.tr.peers():0,s=$('cx-status');if(!CHA
   s.className=n?'on':'';s.textContent=n?L('● '+(n+1)+' online','● '+(n+1)+' online'):L('● procurando leitores…','● looking for readers…')}
 function sistema(t){const d=document.createElement('div');d.className='cx-sys';d.textContent=t;$('cx-msgs').append(d);rolar()}
 function rolar(){const b=$('cx-msgs');b.scrollTop=b.scrollHeight}
+/* v0.57: teclado virtual encolhe a tela; mantem o fim da conversa e o campo de digitacao visiveis */
+addEventListener('resize',()=>{const c=$('chat');if(c&&!c.hidden){rolar();const f=document.activeElement;if(f&&f.closest&&f.closest('#cx-form'))setTimeout(()=>{try{f.scrollIntoView({block:'nearest'})}catch(e){}},50)}});
 function pintarMsg(m){const box=$('cx-msgs'),cor=AV.cor(m.uid),li=document.createElement('div');li.className='cx-m'+(m.me?' me':'');li.dataset.u=m.uid;
   if(!m.me){li.style.setProperty('--fg',cor.fg);li.style.setProperty('--bg',cor.bg);li.style.setProperty('--bd',cor.bd)}
   const av=document.createElement('div');av.className='cx-av';av.innerHTML=AV.svg(m.av,m.uid);

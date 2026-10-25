@@ -66,6 +66,15 @@
     const-string v1, "file:///android_asset/index.html"
     invoke-virtual {v0, v1}, Landroid/webkit/WebView;->loadUrl(Ljava/lang/String;)V
     invoke-direct {p0}, Lcom/kalek/comics/MainActivity;->hideBars()V
+    invoke-virtual {p0}, Lcom/kalek/comics/MainActivity;->getWindow()Landroid/view/Window;
+    move-result-object v1
+    invoke-virtual {v1}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+    move-result-object v1
+    invoke-virtual {v1}, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;
+    move-result-object v1
+    new-instance v2, Lcom/kalek/comics/MainActivity$3;
+    invoke-direct {v2, p0}, Lcom/kalek/comics/MainActivity$3;-><init>(Lcom/kalek/comics/MainActivity;)V
+    invoke-virtual {v1, v2}, Landroid/view/ViewTreeObserver;->addOnGlobalLayoutListener(Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V
     return-void
 .end method
 

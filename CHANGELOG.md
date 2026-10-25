@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.57
+- Chat no celular: o teclado virtual não cobre mais o campo de digitação nem as últimas mensagens (a tela encolhe quando o teclado abre).
+- Chat on phones: the on-screen keyboard no longer covers the text box or the latest messages (the screen shrinks when the keyboard opens).
 ## 0.56
 - Interface ajustada para celular: botões e títulos não passam mais da borda da tela (biblioteca, leitor, painel de modos, barra superior).
 - Painel de modos (Mangá/Ocidental/Vertical/Webtoon) em grade 2×2 no celular.
