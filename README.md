@@ -14,9 +14,10 @@ Leitor gratuito e open source de **HQ, mangá e webtoon**. Um único arquivo HTM
 
 ## Instalar
 - **Abrir online (sem instalar):** https://intuneoverseer.github.io/ComicXD/ — funciona no navegador do PC; seus arquivos ficam no seu aparelho.
-- **Última versão:** [ComicXD 0.55](https://github.com/IntuneOverseer/ComicXD/releases/tag/v0.55) (APK + HTML)
+- **Últimas versões:** página de [Releases](https://github.com/IntuneOverseer/ComicXD/releases): Android e HTML na `v0.69`; programa de Windows (portátil e instalador) na `v0.69.1`.
 - **Android:** baixe o APK em [Releases](../../releases), habilite "instalar apps desconhecidos" para o navegador/gerenciador de arquivos e abra o arquivo. O Play Protect pode avisar por ser um app novo fora da loja.
 - **PC:** baixe `dist/ComicXD-pc.html` e abra no navegador.
+- **Windows (programa):** baixe o `portable.exe` (sem instalar) ou o `Setup.exe` (instala só para o seu usuário, sem administrador) em [Releases](../../releases). O Windows pode mostrar o aviso do SmartScreen por o programa não ser assinado: não é vírus, veja [`docs/WINDOWS.md`](docs/WINDOWS.md).
 
 ## Conteúdo
 O ComicXD **não traz nem baixa quadrinhos**. Use apenas arquivos que você tem direito de ler.
@@ -35,7 +36,7 @@ Testado em navegador e emulação; uso real em tablet Android em andamento. Bugs
 
 **Features:** CBZ/CBR/PDF/images · guided panel-by-panel mode for comics with smart reading order (local OpenCV) · manga and webtoon modes · library categories (Marvel, DC, Manga, Webtoon, Manhua, Manhwa) · full-page zoom and double pages · themes · PT/EN/JA/KO · optional P2P chat.
 
-**Install:** grab the APK from [Releases](../../releases) (allow unknown sources), open `dist/ComicXD-pc.html` in your browser, or use it online: https://intuneoverseer.github.io/ComicXD/
+**Install:** grab the APK from [Releases](../../releases) (allow unknown sources), open `dist/ComicXD-pc.html` in your browser, use it online (https://intuneoverseer.github.io/ComicXD/), or on **Windows** download the portable `.exe` or the per-user `Setup.exe` from Releases (SmartScreen may warn because the app is unsigned: it is not malware, see [`docs/WINDOWS.md`](docs/WINDOWS.md)).
 
 **Content:** ComicXD ships and downloads no comics. Use files you are entitled to read.
 

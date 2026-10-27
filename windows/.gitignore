@@ -1,0 +1,4 @@
+dist/
+*.syso
+setup/ComicXD.exe.gz
+index.html

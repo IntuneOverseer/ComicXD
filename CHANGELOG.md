@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.69.1 — Windows
+- Novo: **ComicXD para Windows**, o mesmo leitor da 0.69 (nada mudou dentro dele) numa janela própria. Dois formatos: `portable.exe` (um arquivo, sem instalar; dados na pasta `ComicXD-dados` ao lado) e `Setup.exe` (instala só para o usuário, sem administrador; atalho no Menu Iniciar, desinstalador em "Aplicativos instalados"; `/S` para instalar em silêncio).
+- Janela redimensionável que lembra tamanho, posição e maximizada. Tela cheia com F11, Alt+Enter ou a tecla F do leitor; Esc sai sem sair da HQ.
+- Links externos abrem no navegador do Windows; soltar arquivo na janela não faz o leitor navegar; F5, Ctrl+R/O/U/P/S e Alt+←/→ desligados. Uma janela por pasta de dados.
+- Os executáveis não são assinados digitalmente: o SmartScreen pode avisar na primeira vez (alerta de reputação, não é vírus). Guia: `docs/WINDOWS.md`. Código: pasta `windows/`.
+- Sem mudança no Android/APK (continua na 0.69).
+- EN: **ComicXD for Windows** (same 0.69 reader in its own resizable window): single-file portable `.exe` and a per-user `Setup.exe` (no admin). Fullscreen with F11 / Alt+Enter / the reader's F key. Unsigned, so SmartScreen may warn on first run (reputation warning, not malware). No Android change.
+
 ## 0.69
 - Tela inicial: novo cartão "Novidades" ao lado das dicas, com as melhorias da versão, versões anteriores e erros conhecidos (abre e fecha, sem sair do app). Erros: e-mail ou Issues do GitHub. Cartão do zoom com mais detalhes.
 - App Android: ao abrir, avisa se há versão nova no GitHub e pergunta "Baixar agora? Sim/Não". Sim abre o download do APK no navegador; Não pergunta de novo na próxima abertura (e ao voltar para o app, depois de 3 minutos). A instalação continua manual (um toque).
