@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.70
+- Biblioteca: **informações do título**. Ao adicionar um CBZ/ZIP, o app lê o `ComicInfo.xml` (série, número, título, volume, autor, editora, ano, gênero e sinopse) e o cartão passa a mostrar "Série #número — Título". Sem metadados, continua mostrando o nome do arquivo.
+- Biblioteca: novo botão **✎ Editar informações** no menu ⋯ do título. As mudanças valem só dentro do app (o arquivo original não é alterado). Tem "Reler do arquivo (ComicInfo.xml)" e "Limpar campos".
+- Biblioteca: a busca também acha por série, título e autor; nova ordem **Série / número** (1, 2, 10 na ordem numérica). Mover de categoria mantém as informações.
+- Limites: a leitura automática do `ComicInfo.xml` vale para CBZ/ZIP; em CBR, PDF e EPUB preencha à mão. Arquivo aberto direto (fora da biblioteca) entra sem informações; use "Reler do arquivo".
+- Sem mudança no motor de leitura, nos filtros de cor nem no app do Windows (que continua na 0.69.1).
+- EN: Library **title info**. Adding a CBZ/ZIP now reads its `ComicInfo.xml` (series, number, title, volume, writer, publisher, year, genre, summary) and the card shows "Series #number — Title". New **✎ Edit info** button in the title's ⋯ menu (changes stay inside the app; the original file is never modified), with "Re-read from file" and "Clear fields". Search also matches series, title and writer; new sort **Series / number**. Limits: automatic reading works for CBZ/ZIP only. No change to the reading engine or the Windows app (still 0.69.1).
+
 ## 0.69.1 — Windows
 - Novo: **ComicXD para Windows**, o mesmo leitor da 0.69 (nada mudou dentro dele) numa janela própria. Dois formatos: `portable.exe` (um arquivo, sem instalar; dados na pasta `ComicXD-dados` ao lado) e `Setup.exe` (instala só para o usuário, sem administrador; atalho no Menu Iniciar, desinstalador em "Aplicativos instalados"; `/S` para instalar em silêncio).
 - Janela redimensionável que lembra tamanho, posição e maximizada. Tela cheia com F11, Alt+Enter ou a tecla F do leitor; Esc sai sem sair da HQ.

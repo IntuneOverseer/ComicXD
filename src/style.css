@@ -608,3 +608,8 @@ html[data-modo=web] .how .nov ul{font-size:13.5px}
 #mk-btn.off{opacity:.38;filter:grayscale(1)}
 #mk-btn.sacode{animation:mksac .4s ease}
 @keyframes mksac{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+/* v0.70: editor de informacoes do titulo */
+.sheet .mf{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim)}
+.sheet .mf input,.sheet .mf textarea{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:var(--k2);color:#fff;border:1px solid var(--line);font:600 16px var(--ui);resize:vertical}
+.sheet .mf textarea{min-height:90px}

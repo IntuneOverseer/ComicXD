@@ -28,6 +28,7 @@
       <div><h3>Menu e tela cheia</h3><p><span class="so-toque">Toque no <b>centro</b> para mostrar as barras: biblioteca, páginas, guiada ou página inteira, <b>Aa</b> e <b>⛶</b> (tela cheia).</span><span class="so-web">As barras ficam sempre visíveis. <b>⛶ Tela cheia</b> (ou tecla <kbd>F</kbd>) deixa só a HQ; clique no centro para ver o menu e <kbd>Esc</kbd> para sair.</span></p></div>
       <div><h3>Zoom livre</h3><p><span class="so-toque"><b>Dois toques no centro</b> ou <b>pinça</b> dão zoom. Arraste para mover.</span><span class="so-web"><b>Ctrl + roda</b> (ou duplo clique) dá zoom; arraste ou use a roda para mover.</span> <span>Dois toques/cliques de novo voltam à página inteira.</span> <span>Funciona também no modo Vertical. No mangá, em Página inteira, a próxima página começa no canto onde a leitura começa (direita no modo Mangá, esquerda no Ocidental).</span></p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
         <li><b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.</li>
         <li>Vertical das HQs fluido e efeitos de virar página mais suaves.</li>
@@ -51,6 +52,7 @@
       <div><h3>Modos de leitura</h3><p>No menu, troque entre <b>Mangá</b> (direita para esquerda), <b>Ocidental</b>, <b>Vertical</b> e <b>Webtoon</b> (rolagem contínua). O app lembra o modo de cada obra.</p></div>
       <div><h3>Bordas e fundo</h3><p>O botão <b>✂ Cortar bordas</b> tira as margens da página. Em <b>Aa</b> você escolhe o fundo: preto, cinza ou branco.</p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
         <li><b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.</li>
         <li>Vertical das HQs fluido e efeitos de virar página mais suaves.</li>
@@ -222,7 +224,7 @@
 
 <div id="bib" hidden role="dialog" aria-label="Biblioteca"><div class="bb">
   <header class="bb-top"><button class="ib" id="bib-x" type="button">‹ <span>Voltar</span></button><h2>Biblioteca</h2><button class="btn" id="bib-add" type="button">＋ Adicionar</button></header>
-  <div class="bb-tools"><input id="bib-q" type="search" placeholder="Buscar na biblioteca" autocomplete="off"><select id="bib-ord" aria-label="Ordenar"><option value="recente">Mais recentes</option><option value="nome">Nome (A–Z)</option><option value="tam">Maiores primeiro</option><option value="antigo">Mais antigos</option></select></div>
+  <div class="bb-tools"><input id="bib-q" type="search" placeholder="Buscar na biblioteca" autocomplete="off"><select id="bib-ord" aria-label="Ordenar"><option value="recente">Mais recentes</option><option value="nome">Nome (A–Z)</option><option value="tam">Maiores primeiro</option><option value="antigo">Mais antigos</option><option value="serie">Série / número</option></select></div>
   <div id="bib-chips" class="chips"></div>
   <div id="bib-med"><div class="bar"><i id="bib-med-i"></i></div><div class="lin"><span id="bib-med-t"></span><button class="chip" id="bib-prot" type="button" hidden>Proteger armazenamento</button><button class="chip" id="bib-bkb" type="button">Backup do progresso</button></div><p id="bib-med-av" hidden></p></div>
   <div id="bib-grid"></div>

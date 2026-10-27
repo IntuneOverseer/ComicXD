@@ -1,4 +1,4 @@
-Object.assign(EN,{'Cor do app':'App color','Cor personalizada':'Custom color','Biblioteca':'Library','＋ Adicionar':'＋ Add','Buscar na biblioteca':'Search the library','Mais recentes':'Newest','Nome (A–Z)':'Name (A–Z)','Maiores primeiro':'Largest first','Mais antigos':'Oldest','Proteger armazenamento':'Protect storage','Backup do progresso':'Progress backup','Copiar':'Copy','Restaurar':'Restore',
+Object.assign(EN,{'Série / número':'Series / number','Cor do app':'App color','Cor personalizada':'Custom color','Biblioteca':'Library','＋ Adicionar':'＋ Add','Buscar na biblioteca':'Search the library','Mais recentes':'Newest','Nome (A–Z)':'Name (A–Z)','Maiores primeiro':'Largest first','Mais antigos':'Oldest','Proteger armazenamento':'Protect storage','Backup do progresso':'Progress backup','Copiar':'Copy','Restaurar':'Restore',
 'Copie este texto e guarde. Para restaurar, cole o texto aqui e toque em Restaurar. (Guarda onde você parou e as preferências; os arquivos continuam na biblioteca.)':'Copy this text and keep it. To restore, paste it here and tap Restore. (Keeps where you stopped and your preferences; files stay in the library.)'});
 /* ---------- biblioteca: indice persistente, importacao (aparelho / nuvem via seletor do Android), busca, armazenamento ---------- */
 const FONTES={aparelho:['Aparelho','Device'],gdrive:['Google Drive','Google Drive'],onedrive:['OneDrive','OneDrive'],ftp:['FTP / outro','FTP / other']};
@@ -14,6 +14,44 @@ const idxPut=r=>idxOp('readwrite',st=>st.put(r,r.key));
 const idxDel=k=>idxOp('readwrite',st=>st.delete(k));
 const idxGet=k=>idxOp('readonly',st=>st.get(k));
 const semExt=n=>n.replace(/\.(cbr|cbz|zip|rar|pdf|epub)$/i,'');
+
+/* ---------- v0.70: metadados (ComicInfo.xml) ---------- */
+const META_CAMPOS=[['serie','Série','Series',200],['numero','Número','Number',20],['titulo','Título','Title',200],['volume','Volume','Volume',20],['autor','Roteirista / autor','Writer / author',200],['editora','Editora','Publisher',120],['ano','Ano','Year',4],['genero','Gênero','Genre',120],['sinopse','Sinopse','Summary',2000]];
+const metaLimpa=(s,max,nl)=>{s=String(s==null?'':s).replace(/\r\n?/g,'\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,'');s=nl?s.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n'):s.replace(/\s+/g,' ');return s.trim().slice(0,max)};
+function metaNormal(m,origem){const o={};let tem=false;for(const [k,,,max] of META_CAMPOS){let v=metaLimpa(m&&m[k],max,k==='sinopse');if(k==='ano')v=v.replace(/\D/g,'').slice(0,4);if(v){o[k]=v;tem=true}}
+  if(!tem)return null;o.origem=origem||'manual';return o}
+function metaDeXml(txt){try{txt=String(txt||'').replace(/^﻿/,'');if(!txt||txt.length>1e6)return null;
+  const d=new DOMParser().parseFromString(txt,'application/xml');if(d.getElementsByTagName('parsererror').length)return null;
+  const raiz=d.documentElement;if(!raiz||String(raiz.localName||raiz.nodeName).toLowerCase()!=='comicinfo')return null;
+  const g=n=>{for(const c of raiz.children)if(String(c.localName||c.nodeName).toLowerCase()===n)return c.textContent;return ''};
+  return metaNormal({serie:g('series'),numero:g('number'),titulo:g('title'),volume:g('volume'),autor:g('writer'),editora:g('publisher'),ano:g('year'),genero:g('genre'),sinopse:g('summary')},'comicinfo')}catch(e){return null}}
+// le o ComicInfo.xml de um ZIP/CBZ ja aberto (nunca lanca erro: sem arquivo, XML ruim ou grande demais => null)
+async function metaDeZip(zip){try{const nome=Object.keys(zip.files).find(n=>!zip.files[n].dir&&/^(?:[^/]*\/)?comicinfo\.xml$/i.test(n));if(!nome)return null;
+  const e=zip.files[nome],tam=e&&e._data&&e._data.uncompressedSize;if(tam>1e6)return null;return metaDeXml(await e.async('string'))}catch(e){return null}}
+const metaTexto=x=>{const m=x&&x.meta;return m?[m.serie,m.numero,m.titulo,m.volume,m.autor,m.editora,m.ano,m.genero].filter(Boolean).join(' '):''};
+// titulo mostrado no cartao: "Serie #numero — Titulo" se houver metadados; senao o nome do arquivo
+const bibTitulo=it=>{const m=it.meta;if(m&&(m.serie||m.titulo)){let t=m.serie||'';if(m.numero)t+=(t?' ':'')+'#'+m.numero;if(m.titulo&&m.titulo!==m.serie)t+=(t?' — ':'')+m.titulo;return t}return it.name.replace(/_+/g,' ').trim()};
+const ordSerie=(a,b)=>{const sa=(a.meta&&a.meta.serie)||a.name,sb=(b.meta&&b.meta.serie)||b.name,c=sa.localeCompare(sb,undefined,{numeric:true,sensitivity:'base'});if(c)return c;
+  const na=parseFloat(a.meta&&a.meta.numero),nb=parseFloat(b.meta&&b.meta.numero);if(!isNaN(na)&&!isNaN(nb)&&na!==nb)return na-nb;return a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'})};
+function bibEditar(it){const m=$('bib-menu'),c=$('bib-menu-c');m.hidden=false;c.replaceChildren();
+  const h=document.createElement('h3');h.textContent=L('Informações do título','Title info');c.append(h);
+  const p=document.createElement('p');p.className='info';p.textContent=L('Arquivo: ','File: ')+it.name+' · '+L('as mudanças valem só aqui no app; o arquivo original não é alterado.','changes apply only here in the app; the original file is not changed.');c.append(p);
+  const cur=it.meta||{},campos={};
+  for(const [k,pt,en,max] of META_CAMPOS){const lab=document.createElement('label');lab.className='mf';const sp=document.createElement('span');sp.textContent=L(pt,en);
+    const inp=document.createElement(k==='sinopse'?'textarea':'input');if(k!=='sinopse')inp.type='text';else inp.rows=4;inp.maxLength=max;inp.value=cur[k]||'';if(k==='ano')inp.inputMode='numeric';
+    lab.append(sp,inp);c.append(lab);campos[k]=inp}
+  const bt=(txt,fn,cls)=>{const b=document.createElement('button');b.type='button';b.className='btn'+(cls?' '+cls:'');b.textContent=txt;b.onclick=fn;c.append(b);return b};
+  const ler=()=>{const o={};for(const k in campos)o[k]=campos[k].value;return o};
+  bt(L('Salvar','Save'),async()=>{const mt=metaNormal(ler(),'manual'),n=Object.assign({},it);if(mt)n.meta=mt;else delete n.meta;await idxPut(n);m.hidden=true;await bibRender()});
+  bt(L('Reler do arquivo (ComicInfo.xml)','Re-read from file (ComicInfo.xml)'),async()=>{
+    try{const v=await libGet(it.key),f=v&&v.files&&v.files.length===1?v.files[0]:null;
+      if(!f||!/\.(cbz|zip)$/i.test(f.name)){aviso(L('A leitura automática funciona só em CBZ/ZIP. Preencha à mão.','Automatic reading works only for CBZ/ZIP. Fill it in by hand.'));return}
+      const mt=await metaDeZip(await JSZip.loadAsync(f.blob));
+      if(!mt){aviso(L('Não encontrei um ComicInfo.xml válido nesse arquivo.','No valid ComicInfo.xml found in this file.'));return}
+      for(const k in campos)campos[k].value=mt[k]||'';aviso(L('Campos preenchidos. Toque em Salvar para guardar.','Fields filled in. Tap Save to keep them.'))}
+    catch(e){aviso(L('Não consegui ler o arquivo guardado.','Could not read the stored file.'))}},'ghost');
+  bt(L('Limpar campos','Clear fields'),()=>{for(const k in campos)campos[k].value=''},'ghost');
+  bt(L('Cancelar','Cancel'),()=>bibMenu(it),'ghost')}
 function regDe(key,v,fonte){const tam=(v.files||[]).reduce((a,f)=>a+((f.blob&&f.blob.size)||0),0);
   return {key,name:v.name,manga:key.startsWith('mg:'),fonte:fonte||'aparelho',tam,capa:v.capa||null,t:v.t||Date.now(),pag:null}}
 // livros guardados por versoes antigas entram no indice uma vez
@@ -29,12 +67,12 @@ const RE_MARVEL=/marvel|homem[- ]aranha|spider-?man|vingadores|avengers|wolverin
 const RE_DC=/\bdc\b|dc comics|batman|superman|liga da justi[cç]a|justice league|mulher[- ]maravilha|wonder woman|\bflash\b|lanterna verde|green lantern|aquaman|coringa|\bjoker\b|asa noturna|nightwing|arlequina|harley quinn|mulher[- ]gato|catwoman|shazam|supergirl|batgirl|jovens tit[aã]s|teen titans|watchmen|sandman|constantine|flashpoint|crise nas infinitas|infinite crisis/i;
 const catDoNome=(n,mg)=>{n=String(n||'');if(!mg)return RE_MARVEL.test(n)?'marvel':RE_DC.test(n)?'dc':undefined;return /webtoon/i.test(n)?'webtoon':/manhwa/i.test(n)?'manhwa':/manhua/i.test(n)?'manhua':undefined};
 const bibTipoOk=(x,t)=>t==='todos'||(t==='hq'?!x.manga:t==='manga'?(!!x.manga&&!x.cat):x.cat===t);
-async function guardarLivro(key,name,files,primeira,fonte,pag,catF){
+async function guardarLivro(key,name,files,primeira,fonte,pag,catF,meta){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
   const capa=primeira?await capaDe(primeira):null,plain=files.map(f=>({name:f.name,type:f.type,blob:f})),v={name,files:plain,capa,t:Date.now()};
   const ok=await libPut(key,v);
   if(!ok){aviso(L('Sem espaço para guardar “'+name+'”. Libere espaço na Biblioteca (remova títulos) e abra de novo.','Not enough space to store “'+name+'”. Free space in the Library (remove titles) and open it again.'));return null}
-  const ant=await idxGet(key);await idxPut(Object.assign(regDe(key,v,(ant&&ant.fonte)||fonte||'aparelho'),{pag:pag||(ant&&ant.pag)||null,cat:catF!==undefined?catF:(ant&&ant.cat!==undefined)?ant.cat:catDoNome(name,!!(ant?ant.manga:false)||/^mg:/.test(key))}));
+  const ant=await idxGet(key),mtF=meta||(ant&&ant.meta)||null;await idxPut(Object.assign(regDe(key,v,(ant&&ant.fonte)||fonte||'aparelho'),mtF?{meta:mtF}:{},{pag:pag||(ant&&ant.pag)||null,cat:catF!==undefined?catF:(ant&&ant.cat!==undefined)?ant.cat:catDoNome(name,!!(ant?ant.manga:false)||/^mg:/.test(key))}));
   const r=store.get('hq-recentes',[]),it=r.find(x=>x.key===key);if(it){it.salvo=true;store.set('hq-recentes',r)}
   renderRecent();if(bibAberto())bibRender();return ok}
 async function abrirDaEstante(it){const v=await libGet(it.key);
@@ -76,12 +114,12 @@ async function bibImportar(files,fonte){
   clearInterval(tm);box.hidden=true;await bibRender();
   aviso(L(ok+' adicionado(s)'+(dup?' · '+dup+' já existia(m)':'')+(erro?' · '+erro+' com erro'+(ultErro?' ('+ultErro+')':''):''),ok+' added'+(dup?' · '+dup+' already there':'')+(erro?' · '+erro+' failed'+(ultErro?' ('+ultErro+')':''):'')))}
 async function bibImportarUm(g,fonte,manga0,catF){
-  const f=g[0],ehArq=EXT_MG.test(f.name),ehMg=/\.(pdf|epub)$/i.test(f.name)?true:manga0;let name,n=0,capa=null;
+  const f=g[0],ehArq=EXT_MG.test(f.name),ehMg=/\.(pdf|epub)$/i.test(f.name)?true:manga0;let name,n=0,capa=null,meta=null;
   if(!ehArq){const o=[...g].sort((a,b)=>natural(a.name,b.name));name=o[0].name.replace(/[_ -]*\d*\.\w+$/,'')||'Imagens';n=o.length;capa=o[0]}
   else{name=f.name;
     if(/\.pdf$/i.test(f.name)){const p=await pdfAbrir(f,null,1);n=p.length;try{capa=await comLimite(p[0].get(),25000,L('Esse PDF demorou demais para gerar a capa e pode estar corrompido.','This PDF took too long to render its cover and may be corrupted.'))}finally{p.fecha()}}
     else if(/\.epub$/i.test(f.name)){const p=await epubPaginas(f,true);n=p.length;if(n)capa=await p[0].get()}
-    else if(/\.(cbz|zip)$/i.test(f.name)){const zip=await JSZip.loadAsync(f),ns=Object.keys(zip.files).filter(x=>!zip.files[x].dir&&IMG.test(x)&&!/__MACOSX|\/\./.test(x)).sort(natural);
+    else if(/\.(cbz|zip)$/i.test(f.name)){const zip=await JSZip.loadAsync(f);meta=await metaDeZip(zip);const ns=Object.keys(zip.files).filter(x=>!zip.files[x].dir&&IMG.test(x)&&!/__MACOSX|\/\./.test(x)).sort(natural);
       n=ns.length;if(n)capa=new Blob([await zip.files[ns[0]].async('uint8array')],{type:mimeOf(ns[0])})}
     else{const data=await f.arrayBuffer();
       try{const ex=await UnrarLib.createExtractorFromData({wasmBinary:b64ToBytes('unrarwasm').buffer,data}),ns=[...ex.getFileList().fileHeaders].filter(h=>!h.flags.directory&&IMG.test(h.name)&&!/__MACOSX/.test(h.name)).map(h=>h.name).sort(natural);
@@ -90,7 +128,7 @@ async function bibImportarUm(g,fonte,manga0,catF){
   if(!ehArq?false:!n&&!/\.(cbr|rar)$/i.test(f.name))return false;
   const tam=g.reduce((a,x)=>a+x.size,0),bn=semExt(name),ex=(await idxAll()).find(x=>!!x.manga===!!ehMg&&x.name===bn&&x.tam===tam);if(ex)return 'dup';
   const key=(ehMg?'mg:':'hq:')+name+':'+(n||tam);
-  return !!(await guardarLivro(key,bn,g,capa,fonte,n,catF))}
+  return !!(await guardarLivro(key,bn,g,capa,fonte,n,catF,meta))}
 
 /* ---------- tela da biblioteca ---------- */
 function bibAbrir(on,semHist){const b=$('bib');
@@ -114,9 +152,9 @@ function bibChips(todos){const box=$('bib-chips');box.replaceChildren();
 async function bibRender(){
   const todos=await idxAll();for(const x of todos)if(x.cat===undefined)x.cat=catDoNome(x.name,x.manga);bibIdx=todos;bibChips(todos);bibMedidor();
   const q=bibF.q.trim().toLowerCase();
-  let l=todos.filter(x=>bibTipoOk(x,bibF.tipo)&&(bibF.fonte==='todas'||x.fonte===bibF.fonte)&&(!q||x.name.toLowerCase().includes(q)));
+  let l=todos.filter(x=>bibTipoOk(x,bibF.tipo)&&(bibF.fonte==='todas'||x.fonte===bibF.fonte)&&(!q||(x.name+' '+metaTexto(x)).toLowerCase().includes(q)));
   const nat=(a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});
-  l.sort(bibF.ord==='nome'?nat:bibF.ord==='tam'?(a,b)=>b.tam-a.tam:bibF.ord==='antigo'?(a,b)=>a.t-b.t:(a,b)=>b.t-a.t);
+  l.sort(bibF.ord==='serie'?ordSerie:bibF.ord==='nome'?nat:bibF.ord==='tam'?(a,b)=>b.tam-a.tam:bibF.ord==='antigo'?(a,b)=>a.t-b.t:(a,b)=>b.t-a.t);
   const g=$('bib-grid');if(bibObs){bibObs.disconnect();bibObs=null}for(const u of bibUrls)URL.revokeObjectURL(u);bibUrls=[];g.replaceChildren();
   $('bib-vazio').hidden=l.length>0;$('bib-vazio').textContent=todos.length?L('Nada encontrado com esse filtro.','Nothing found with this filter.'):L('Sua biblioteca está vazia. Toque em ＋ Adicionar para trazer arquivos do aparelho, do Google Drive, do OneDrive ou de um app com FTP.','Your library is empty. Tap ＋ Add to bring files from the device, Google Drive, OneDrive or an FTP app.');
   bibObs=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const li=e.target,it=li._it;bibObs.unobserve(li);
@@ -126,7 +164,7 @@ async function bibRender(){
     const pr=store.get(it.key,null),pct=pr&&it.pag?Math.min(100,Math.round(100*(pr.page+1)/it.pag)):0;
     const b=document.createElement('button');b.type='button';b.className='bc-b';b.setAttribute('aria-label',L('Abrir ','Open ')+it.name);
     const cap=document.createElement('span');cap.className='capa vazia';cap.textContent=it.cat?catNome(it.cat).toUpperCase():it.manga?'MANGÁ':'HQ';
-    const ft=document.createElement('span');ft.className='ft';const nm=document.createElement('span');nm.className='nome';nm.textContent=it.name.replace(/_+/g,' ').trim();
+    const ft=document.createElement('span');ft.className='ft';const nm=document.createElement('span');nm.className='nome';nm.textContent=bibTitulo(it);
     const meta=document.createElement('span');meta.className='pg';meta.textContent=fmtB(it.tam)+(it.pag?' · '+it.pag+L(' pág.',' pg.'):'');
     ft.append(nm,meta);if(pct){const pg=document.createElement('span');pg.className='prog';pg.innerHTML='<i></i>';pg.firstChild.style.width=pct+'%';ft.append(pg)}
     const tag=document.createElement('span');tag.className='bd';tag.textContent=(FONTES[it.fonte]?LN(FONTES[it.fonte]):it.fonte);
@@ -163,11 +201,14 @@ function bibMoverLote(){const m=$('bib-menu'),c=$('bib-menu-c');if(!bibSel.size)
     m.hidden=true;bibSelSair();await bibRender();if(typeof toast==='function')toast(n+L(' título(s) movido(s) para ',' title(s) moved to ')+catRot(cv))}));
   const x=document.createElement('button');x.type='button';x.className='btn ghost';x.textContent=L('Cancelar','Cancel');x.onclick=()=>{m.hidden=true};c.append(x)}
 function bibMenu(it,conf){const m=$('bib-menu'),c=$('bib-menu-c');m.hidden=false;c.replaceChildren();
-  const h=document.createElement('h3');h.textContent=it.name;c.append(h);
+  const h=document.createElement('h3');h.textContent=bibTitulo(it);c.append(h);
   const p=document.createElement('p');p.className='info';
   p.textContent=(it.cat?catNome(it.cat):it.manga?L('Mangá','Manga'):'HQ')+' · '+fmtB(it.tam)+(it.pag?' · '+it.pag+L(' páginas',' pages'):'')+' · '+(FONTES[it.fonte]?LN(FONTES[it.fonte]):it.fonte)+' · '+L('adicionado em ','added ')+new Date(it.t).toLocaleDateString(LANGHTML[LANG]);c.append(p);
   const bt=(txt,fn,cls)=>{const b=document.createElement('button');b.type='button';b.className='btn'+(cls?' '+cls:'');b.textContent=txt;b.onclick=fn;c.append(b)};
   if(!conf){bt(L('▶ Abrir','▶ Open'),()=>{m.hidden=true;abrirDaEstante(it)});
+    if(it.meta){const mm=it.meta,d=document.createElement('p');d.className='info';d.textContent=[mm.autor,mm.editora,mm.ano,mm.genero].filter(Boolean).join(' · ');if(d.textContent)c.append(d);
+      if(mm.sinopse){const s=document.createElement('p');s.className='info';s.textContent=mm.sinopse;c.append(s)}}
+    bt(L('✎ Editar informações','✎ Edit info'),()=>bibEditar(it),'ghost');
     {const q=document.createElement('p');q.className='info';q.textContent=L('Mover para a categoria:','Move to category:');c.append(q);
       c.append(bibCatChips(catKey(it),async cv=>{const n=moverItem(it,cv);await idxPut(n);await bibRender();bibMenu(n)}))}
       bt(L('Remover da biblioteca','Remove from library'),()=>bibMenu(it,true),'ghost');bt(L('Fechar','Close'),()=>{m.hidden=true},'ghost')}
