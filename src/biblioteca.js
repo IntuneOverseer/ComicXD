@@ -3,7 +3,7 @@ Object.assign(EN,{'Cor do app':'App color','Cor personalizada':'Custom color','B
 /* ---------- biblioteca: indice persistente, importacao (aparelho / nuvem via seletor do Android), busca, armazenamento ---------- */
 const FONTES={aparelho:['Aparelho','Device'],gdrive:['Google Drive','Google Drive'],onedrive:['OneDrive','OneDrive'],ftp:['FTP / outro','FTP / other']};
 const bibAberto=()=>!$('bib').hidden;
-let bibIdx=[],bibF=Object.assign({tipo:'todos',fonte:'todas',q:'',ord:'recente'},{}),bibObs=null,bibUrls=[],bibFonteAdd='aparelho',avisoT=0;
+let bibIdx=[],bibF=Object.assign({tipo:'todos',fonte:'todas',q:'',ord:'recente'},{}),bibObs=null,bibUrls=[],bibFonteAdd='aparelho',bibAddComo=null,avisoT=0;
 const fmtB=b=>{b=+b||0;if(b<1024)return b+' B';const u=['KB','MB','GB','TB'];let i=-1;do{b/=1024;i++}while(b>=1024&&i<3);return b.toFixed(b<10?1:0)+' '+u[i]};
 function aviso(t){let el=$('aviso-g');if(!el){el=document.createElement('div');el.id='aviso-g';el.setAttribute('role','status');document.body.append(el)}
   el.textContent=t;el.classList.add('on');clearTimeout(avisoT);avisoT=setTimeout(()=>el.classList.remove('on'),5000)}
@@ -45,12 +45,12 @@ async function abrirDaEstante(it){const v=await libGet(it.key);
 
 /* ---------- importar sem abrir ---------- */
 async function bibImportar(files,fonte){
-  files=[...files];if(!files.length)return;let manga=aba==='manga',catF;if(bibF.tipo!=='todos'){manga=!CATS_HQ.includes(bibF.tipo);catF=(CATS.includes(bibF.tipo)||CATS_HQ.includes(bibF.tipo))?bibF.tipo:null}
+  files=[...files];if(!files.length)return;let manga=(bibAddComo?bibAddComo==='manga':aba==='manga'),catF;if(bibF.tipo!=='todos'){manga=!CATS_HQ.includes(bibF.tipo);catF=(CATS.includes(bibF.tipo)||CATS_HQ.includes(bibF.tipo))?bibF.tipo:null}
   const arqs=files.filter(f=>EXT_MG.test(f.name)),imgs=files.filter(f=>IMG.test(f.name)&&!EXT_MG.test(f.name));
   const grupos=arqs.map(f=>[f]);if(imgs.length)grupos.push(imgs);
   if(!grupos.length){aviso(L('Nenhum formato aceito. Use PDF, CBZ, CBR, ZIP, RAR, EPUB ou imagens.','No supported format. Use PDF, CBZ, CBR, ZIP, RAR, EPUB or images.'));return}
   const T4=(pt,en,ja,ko)=>[pt,en,ja,ko][LI()],tot=grupos.reduce((a,g)=>a+g.reduce((x,f)=>x+f.size,0),0)||1;
-  let ok=0,dup=0,erro=0,i=0,feito=0,cancel=false,tIni=performance.now(),ini=0,tamAtu=1,rate=0,tFile=performance.now(),fim=0;
+  let ok=0,dup=0,erro=0,ultErro="",i=0,feito=0,cancel=false,tIni=performance.now(),ini=0,tamAtu=1,rate=0,tFile=performance.now(),fim=0;
   const box=$('imp');$('imp-t').textContent=T4('Importando para a biblioteca…','Importing to the library…','ライブラリに取り込み中…','라이브러리로 가져오는 중…');
   $('imp-sub').textContent=T4('Por favor, aguarde. Não feche o app até terminar.','Please wait. Do not close the app until it finishes.','しばらくお待ちください。終わるまでアプリを閉じないでください。','잠시만 기다려 주세요. 끝날 때까지 앱을 닫지 마세요.');
   $('imp-x').textContent=T4('Cancelar','Cancel','キャンセル','취소');$('imp-x').disabled=false;$('imp-x').onclick=()=>{cancel=true;$('imp-x').disabled=true;$('imp-sub').textContent=T4('Cancelando depois deste arquivo…','Cancelling after this file…','このファイルの後でキャンセルします…','이 파일 이후 취소합니다…')};
@@ -69,17 +69,17 @@ async function bibImportar(files,fonte){
   const tm=setInterval(pinta,250);pinta();
   for(const g of grupos){if(cancel)break;i++;tamAtu=g.reduce((x,f)=>x+f.size,0)||1;tFile=performance.now();
     $('imp-nome').textContent=g[0].name.replace(/_+/g,' ');pinta();
-    try{const r=await bibImportarUm(g,fonte,manga,catF);if(r==='dup')dup++;else if(r)ok++;else erro++}catch(e){erro++}
+    try{const r=await bibImportarUm(g,fonte,manga,catF);if(r==='dup')dup++;else if(r)ok++;else erro++}catch(e){erro++;ultErro=(e&&e.message)||''}
     feito+=tamAtu;const dtot=(performance.now()-tIni)/1000;rate=Math.max(1e5,feito/Math.max(0.2,dtot));
     await new Promise(r=>setTimeout(r,0))}
   fim=1;pinta();$('imp-nome').textContent='';await new Promise(r=>setTimeout(r,(performance.now()-tIni)<1100?1100-(performance.now()-tIni):350));
   clearInterval(tm);box.hidden=true;await bibRender();
-  aviso(L(ok+' adicionado(s)'+(dup?' · '+dup+' já existia(m)':'')+(erro?' · '+erro+' com erro':''),ok+' added'+(dup?' · '+dup+' already there':'')+(erro?' · '+erro+' failed':'')))}
+  aviso(L(ok+' adicionado(s)'+(dup?' · '+dup+' já existia(m)':'')+(erro?' · '+erro+' com erro'+(ultErro?' ('+ultErro+')':''):''),ok+' added'+(dup?' · '+dup+' already there':'')+(erro?' · '+erro+' failed'+(ultErro?' ('+ultErro+')':''):'')))}
 async function bibImportarUm(g,fonte,manga0,catF){
   const f=g[0],ehArq=EXT_MG.test(f.name),ehMg=/\.(pdf|epub)$/i.test(f.name)?true:manga0;let name,n=0,capa=null;
   if(!ehArq){const o=[...g].sort((a,b)=>natural(a.name,b.name));name=o[0].name.replace(/[_ -]*\d*\.\w+$/,'')||'Imagens';n=o.length;capa=o[0]}
   else{name=f.name;
-    if(/\.pdf$/i.test(f.name)){const p=await pdfAbrir(f,null,1);n=p.length;try{capa=await p[0].get()}finally{p.fecha()}}
+    if(/\.pdf$/i.test(f.name)){const p=await pdfAbrir(f,null,1);n=p.length;try{capa=await comLimite(p[0].get(),25000,L('Esse PDF demorou demais para gerar a capa e pode estar corrompido.','This PDF took too long to render its cover and may be corrupted.'))}finally{p.fecha()}}
     else if(/\.epub$/i.test(f.name)){const p=await epubPaginas(f,true);n=p.length;if(n)capa=await p[0].get()}
     else if(/\.(cbz|zip)$/i.test(f.name)){const zip=await JSZip.loadAsync(f),ns=Object.keys(zip.files).filter(x=>!zip.files[x].dir&&IMG.test(x)&&!/__MACOSX|\/\./.test(x)).sort(natural);
       n=ns.length;if(n)capa=new Blob([await zip.files[ns[0]].async('uint8array')],{type:mimeOf(ns[0])})}
@@ -96,7 +96,7 @@ async function bibImportarUm(g,fonte,manga0,catF){
 function bibAbrir(on,semHist){const b=$('bib');
   if(on){if(bibAberto())return;b.hidden=false;try{history.pushState({hq:'bib'},'')}catch(e){}bibMigrar().then(bibRender);bibRender()}
   else{if(!bibAberto())return;if(!semHist&&history.state&&history.state.hq==='bib'){history.back();return}bibFechar()}}
-function bibFechar(){$('bib').hidden=true;$('bib-menu').hidden=true;$('bib-add-s').hidden=true;$('bib-bk').hidden=true;if(bibObs){bibObs.disconnect();bibObs=null}for(const u of bibUrls)URL.revokeObjectURL(u);bibUrls=[];$('bib-grid').replaceChildren()}
+function bibFechar(){bibSelOn=false;bibSel.clear();$('bib').hidden=true;$('bib-menu').hidden=true;$('bib-add-s').hidden=true;$('bib-bk').hidden=true;if(bibObs){bibObs.disconnect();bibObs=null}for(const u of bibUrls)URL.revokeObjectURL(u);bibUrls=[];$('bib-grid').replaceChildren()}
 addEventListener('popstate',()=>{if(bibAberto())bibFechar()});
 $('bib-btn').onclick=()=>bibAbrir(true);$('bib-x').onclick=()=>bibAbrir(false);
 $('bib-q').oninput=e=>{bibF.q=e.target.value;bibRender()};$('bib-ord').onchange=e=>{bibF.ord=e.target.value;bibRender()};
@@ -131,24 +131,46 @@ async function bibRender(){
     ft.append(nm,meta);if(pct){const pg=document.createElement('span');pg.className='prog';pg.innerHTML='<i></i>';pg.firstChild.style.width=pct+'%';ft.append(pg)}
     const tag=document.createElement('span');tag.className='bd';tag.textContent=(FONTES[it.fonte]?LN(FONTES[it.fonte]):it.fonte);
     b.append(cap,tag,ft);let lpT=0,lpF=false;
-    b.addEventListener('pointerdown',()=>{lpF=false;clearTimeout(lpT);lpT=setTimeout(()=>{lpF=true;try{navigator.vibrate&&navigator.vibrate(15)}catch(x){}bibMenu(it)},520)});
+    b.addEventListener('pointerdown',()=>{lpF=false;clearTimeout(lpT);lpT=setTimeout(()=>{if(bibSelOn)return;lpF=true;try{navigator.vibrate&&navigator.vibrate(15)}catch(x){}bibMenu(it)},520)});
     for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>clearTimeout(lpT));
-    b.addEventListener('contextmenu',e=>{e.preventDefault();clearTimeout(lpT);lpF=true;bibMenu(it)});
-    b.onclick=e=>{if(lpF){lpF=false;e.preventDefault();return}abrirDaEstante(it)};
+    b.addEventListener('contextmenu',e=>{e.preventDefault();clearTimeout(lpT);if(bibSelOn)return;lpF=true;bibMenu(it)});
+    b.onclick=e=>{if(lpF){lpF=false;e.preventDefault();return}if(bibSelOn){e.preventDefault();bibTogSel(it,li);return}abrirDaEstante(it)};
     const mn=document.createElement('button');mn.type='button';mn.className='rm';mn.textContent='⋯';mn.setAttribute('aria-label',L('Opções de ','Options for ')+it.name);mn.onclick=e=>{e.stopPropagation();bibMenu(it)};
-    li.append(b,mn);fr.append(li);}
-  g.append(fr);for(const li of g.children)bibObs.observe(li)}
+    li.append(b,mn);if(bibSelOn&&bibSel.has(it.key))li.classList.add('sel');fr.append(li);}
+  g.append(fr);for(const li of g.children)bibObs.observe(li);bibSelUI()}
+/* v0.68 — todas as categorias ao mover + seleção em lote */
+const CAT_TODAS=[...CATS_HQ,'manga',...CATS];
+const catKey=it=>it.cat||(it.manga?'manga':'hq');
+const catRot=cv=>cv==='hq'?L('HQ (sem categoria)','Comics (no category)'):cv==='manga'?L('Mangá','Manga'):catNome(cv);
+function moverItem(it,cv){const n=Object.assign({},it);if(cv==='hq'||CATS_HQ.includes(cv)){n.manga=false;n.cat=cv==='hq'?null:cv}else{n.manga=true;n.cat=cv==='manga'?null:cv}return n}
+function bibCatChips(atual,fn){const row=document.createElement('div');row.className='chips';for(const cv of CAT_TODAS){const b=document.createElement('button');b.type='button';b.className='chip'+(cv===atual?' on':'');b.textContent=catRot(cv);b.onclick=()=>{if(cv!==atual)fn(cv)};row.append(b)}return row}
+let bibSelOn=false;const bibSel=new Set();
+function bibSelUI(){let bar=$('bib-sel');if(!bar){bar=document.createElement('div');bar.id='bib-sel';$('bib-grid').before(bar)}
+  bar.replaceChildren();const mk=(t,fn,on)=>{const b=document.createElement('button');b.type='button';b.className='chip'+(on?' on':'');b.textContent=t;b.onclick=fn;bar.append(b);return b};
+  $('bib').classList.toggle('selmode',bibSelOn);
+  if(!bibSelOn){mk(L('☑ Selecionar','☑ Select'),()=>{bibSelOn=true;bibSel.clear();bibSelUI()});return}
+  const n=bibSel.size,tot=[...$('bib-grid').children].length;
+  const t=document.createElement('span');t.className='n';t.textContent=n+L(' selecionado(s)',' selected');bar.append(t);
+  mk(n&&n>=tot?L('Limpar seleção','Clear selection'):L('Selecionar tudo','Select all'),()=>{const g=[...$('bib-grid').children],todos=bibSel.size>=g.length;bibSel.clear();for(const li of g){if(!todos)bibSel.add(li._it.key);li.classList.toggle('sel',!todos)}bibSelUI()});
+  const mv=mk(L('Mover para…','Move to…'),bibMoverLote,true);if(!n){mv.disabled=true;mv.style.opacity='.5'}
+  mk(L('Cancelar','Cancel'),()=>bibSelSair())}
+function bibSelSair(){bibSelOn=false;bibSel.clear();for(const li of $('bib-grid').children)li.classList.remove('sel');bibSelUI()}
+function bibTogSel(it,li){if(bibSel.has(it.key)){bibSel.delete(it.key);li.classList.remove('sel')}else{bibSel.add(it.key);li.classList.add('sel')}bibSelUI()}
+function bibMoverLote(){const m=$('bib-menu'),c=$('bib-menu-c');if(!bibSel.size)return;m.hidden=false;c.replaceChildren();
+  const h=document.createElement('h3');h.textContent=L('Mover ','Move ')+bibSel.size+L(' título(s)',' title(s)');c.append(h);
+  const q=document.createElement('p');q.className='info';q.textContent=L('Escolha a categoria de destino:','Choose the destination category:');c.append(q);
+  c.append(bibCatChips(null,async cv=>{const ks=new Set(bibSel);let n=0;for(const it of bibIdx)if(ks.has(it.key)){await idxPut(moverItem(it,cv));n++}
+    m.hidden=true;bibSelSair();await bibRender();if(typeof toast==='function')toast(n+L(' título(s) movido(s) para ',' title(s) moved to ')+catRot(cv))}));
+  const x=document.createElement('button');x.type='button';x.className='btn ghost';x.textContent=L('Cancelar','Cancel');x.onclick=()=>{m.hidden=true};c.append(x)}
 function bibMenu(it,conf){const m=$('bib-menu'),c=$('bib-menu-c');m.hidden=false;c.replaceChildren();
   const h=document.createElement('h3');h.textContent=it.name;c.append(h);
   const p=document.createElement('p');p.className='info';
   p.textContent=(it.cat?catNome(it.cat):it.manga?L('Mangá','Manga'):'HQ')+' · '+fmtB(it.tam)+(it.pag?' · '+it.pag+L(' páginas',' pages'):'')+' · '+(FONTES[it.fonte]?LN(FONTES[it.fonte]):it.fonte)+' · '+L('adicionado em ','added ')+new Date(it.t).toLocaleDateString(LANGHTML[LANG]);c.append(p);
   const bt=(txt,fn,cls)=>{const b=document.createElement('button');b.type='button';b.className='btn'+(cls?' '+cls:'');b.textContent=txt;b.onclick=fn;c.append(b)};
   if(!conf){bt(L('▶ Abrir','▶ Open'),()=>{m.hidden=true;abrirDaEstante(it)});
-    if(it.manga){const q=document.createElement('p');q.className='info';q.textContent=L('Mover para a categoria:','Move to category:');c.append(q);const row=document.createElement('div');row.className='chips';
-      for(const cv of ['manga',...CATS]){const b=document.createElement('button');b.type='button';const atual=(it.cat||'manga')===cv;b.className='chip'+(atual?' on':'');b.textContent=cv==='manga'?L('Mangá','Manga'):catNome(cv);
-        b.onclick=async()=>{if(atual)return;const n=Object.assign({},it);if(cv==='manga')n.cat=null;else n.cat=cv;await idxPut(n);await bibRender();bibMenu(n)};row.append(b)}c.append(row)}else{const q=document.createElement('p');q.className='info';q.textContent=L('Mover para a categoria:','Move to category:');c.append(q);const row=document.createElement('div');row.className='chips';
-      for(const cv of ['hq',...CATS_HQ]){const b=document.createElement('button');b.type='button';const atual=(it.cat||'hq')===cv;b.className='chip'+(atual?' on':'');b.textContent=cv==='hq'?L('Sem categoria','No category'):catNome(cv);
-        b.onclick=async()=>{if(atual)return;const n=Object.assign({},it);n.cat=cv==='hq'?null:cv;await idxPut(n);await bibRender();bibMenu(n)};row.append(b)}c.append(row)}bt(L('Remover da biblioteca','Remove from library'),()=>bibMenu(it,true),'ghost');bt(L('Fechar','Close'),()=>{m.hidden=true},'ghost')}
+    {const q=document.createElement('p');q.className='info';q.textContent=L('Mover para a categoria:','Move to category:');c.append(q);
+      c.append(bibCatChips(catKey(it),async cv=>{const n=moverItem(it,cv);await idxPut(n);await bibRender();bibMenu(n)}))}
+      bt(L('Remover da biblioteca','Remove from library'),()=>bibMenu(it,true),'ghost');bt(L('Fechar','Close'),()=>{m.hidden=true},'ghost')}
   else{const w=document.createElement('p');w.className='info';w.textContent=L('Isso apaga a cópia guardada no app. O arquivo original no aparelho ou na nuvem não é tocado.','This deletes the copy stored in the app. The original file on the device or cloud is not touched.');c.append(w);
     bt(L('Sim, remover','Yes, remove'),async()=>{await libDel(it.key);await idxDel(it.key);m.hidden=true;await bibRender();renderRecent()},'perigo');bt(L('Cancelar','Cancel'),()=>bibMenu(it),'ghost')}}
 // adicionar: o seletor de arquivos do Android mostra o aparelho, o Google Drive, o OneDrive e apps de FTP instalados
@@ -157,6 +179,8 @@ const AJUDA_L=()=>{if(LANG==='pt')return AJUDA;if(LANG==='en')return AJUDA_EN;co
 const AJUDA_EN={aparelho:['From device','Pick one or more files (PDF, CBZ, CBR, ZIP, RAR, EPUB or images).'],gdrive:['Google Drive','In the file window, tap ☰ and choose “Drive”. Needs the Google Drive app installed and signed in.'],onedrive:['OneDrive','In the file window, tap ☰ and choose “OneDrive”. Needs the OneDrive app installed and signed in.'],ftp:['FTP / other','ComicXD does not speak FTP by itself. Install a file app with FTP (Solid Explorer, CX Explorer, Material Files…), connect your server there and it shows up in this file window.']};
 function bibAddUI(){const c=$('bib-add-c');c.replaceChildren();const h=document.createElement('h3');h.textContent=L('Adicionar à biblioteca','Add to library');c.append(h);
   const A=AJUDA_L(),ic={aparelho:'📱',gdrive:'☁',onedrive:'☁',ftp:'⇅'};
+  if(bibF.tipo==='todos'){const q=document.createElement('p');q.className='info';q.textContent=L('Adicionar como:','Add as:');c.append(q);const row=document.createElement('div');row.className='chips';
+    const cur=bibAddComo||(aba==='manga'?'manga':'hq');for(const [v,t] of [['hq',L('HQ (leitura guiada)','Comics (guided reading)')],['manga',L('Mangá / Webtoon','Manga / Webtoon')]]){const b=document.createElement('button');b.type='button';b.className='chip'+(v===cur?' on':'');b.textContent=t;b.onclick=()=>{bibAddComo=v;for(const x of row.children)x.classList.remove('on');b.classList.add('on')};row.append(b)}c.append(row)}
   for(const k of ['aparelho','gdrive','onedrive','ftp']){const b=document.createElement('button');b.type='button';b.className='bsrc';
     b.innerHTML='<b></b><small></small>';b.firstChild.textContent=ic[k]+' '+A[k][0];b.lastChild.textContent=A[k][1];b.onclick=()=>{bibFonteAdd=k;$('bib-add-s').hidden=true;$('bib-file').value='';$('bib-file').click()};c.append(b)}
   const x=document.createElement('button');x.type='button';x.className='btn ghost';x.textContent=L('Fechar','Close');x.onclick=()=>{$('bib-add-s').hidden=true};c.append(x)}

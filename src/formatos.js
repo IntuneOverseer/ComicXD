@@ -9,6 +9,14 @@ function pdfPre(){try{if(pdfWk||!window.pdfjsLib)return;
 function pdfLim(){const q=store.get('hq-pdfq','auto'),dm=navigator.deviceMemory||4;
   if(q==='max')return {w:3000,h:4000,s:4.5,j:0.95,t:2,a:60e6};if(q==='alta')return {w:2400,h:3600,s:4,j:0.92,t:1.5,a:45e6};
   return dm>=6?{w:2200,h:3300,s:3.5,j:0.9,t:1,a:30e6}:{w:1800,h:2700,s:3,j:0.88,t:1,a:30e6}}
+function comLimite(pr,ms,msg){let t;return Promise.race([pr,new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(msg)),ms)})]).finally(()=>clearTimeout(t))}
+function pdfConfere(d,fimBytes){   /* devolve texto do erro, ou '' se o arquivo parece um PDF inteiro */
+  if(!d||d.length<64)return L('Esse arquivo está vazio ou incompleto.','This file is empty or incomplete.');
+  const ini=String.fromCharCode.apply(null,d.subarray(0,1024));
+  if(ini.indexOf('%PDF-')<0)return L('Esse arquivo não é um PDF válido.','This file is not a valid PDF.');
+  const fim=String.fromCharCode.apply(null,fimBytes||d.subarray(Math.max(0,d.length-16384)));
+  if(fim.indexOf('%%EOF')<0)return L('Esse PDF está incompleto (download cortado). Baixe de novo.','This PDF is incomplete (cut-off download). Download it again.');
+  return ''}
 async function pdfAbrir(file,prog,lru){const LIM=pdfLim();
   /* paginas muito altas (webtoon em PDF): escala pela largura nativa; o limite por altura deixava a imagem minuscula e borrada */
   /* resolucao nativa: maior imagem desenhada na pagina (sem filtro; so reamostra para o tamanho original) */
@@ -19,12 +27,25 @@ async function pdfAbrir(file,prog,lru){const LIM=pdfLim();
   const escala=v=>v.height>3*v.width?Math.max(0.2,Math.min(LIM.t,Math.sqrt(LIM.a/(v.width*v.height)),32000/v.height)):Math.min(LIM.w/v.width,LIM.h/v.height,LIM.s);
   if(!window.pdfjsLib)throw new Error(L('Leitor de PDF indisponível.','PDF reader unavailable.'));
   pdfPre();const wk=pdfWk;pdfWk=null;
-  const data=new Uint8Array(await file.arrayBuffer());
-  let doc;try{doc=await pdfjsLib.getDocument({data,worker:wk,isEvalSupported:false,useSystemFonts:false}).promise}
-  catch(e){try{wk&&wk.destroy()}catch(x){}throw new Error((e&&e.name==='PasswordException')?L('Esse PDF tem senha.','This PDF is password protected.'):L('Não consegui ler esse PDF.','Could not read this PDF.'))}
-  const n=doc.numPages,pages=[];
+  /* PDF muito grande (>=100 MB): nao carrega o arquivo inteiro na memoria; o pdf.js le so os pedacos de que precisa */
+  const GRANDE=file.size>=104857600;
+  let data=null,rangeOpts=null;
+  if(GRANDE){
+    const len=file.size,ini=new Uint8Array(await file.slice(0,Math.min(len,65536)).arrayBuffer()),fim=new Uint8Array(await file.slice(Math.max(0,len-16384),len).arrayBuffer());
+    const tr=new pdfjsLib.PDFDataRangeTransport(len,ini);
+    tr.requestDataRange=(b,e)=>{file.slice(b,e).arrayBuffer().then(buf=>tr.onDataRange(b,new Uint8Array(buf)),()=>{})};
+    rangeOpts={range:tr,length:len,disableAutoFetch:true,disableStream:true,rangeChunkSize:1048576};
+    data=new Uint8Array(Math.max(ini.length,64));data.set(ini);  /* so para a pre-checagem de cabecalho */
+    {const ruim=pdfConfere(ini,fim);if(ruim){try{wk&&wk.destroy()}catch(x){}throw new Error(ruim)}}
+  }else data=new Uint8Array(await file.arrayBuffer());
+  /* protecao (0.69): confere o arquivo ANTES de abrir; PDF cortado/corrompido nao trava o app */
+  if(!GRANDE){const ruim=pdfConfere(data);if(ruim){try{wk&&wk.destroy()}catch(x){}throw new Error(ruim)}}
+  let doc,tmPdf=0;try{const tarefa=pdfjsLib.getDocument(Object.assign(rangeOpts?rangeOpts:{data},{worker:wk,isEvalSupported:false,useSystemFonts:false}));
+    doc=await Promise.race([tarefa.promise,new Promise((_,rej)=>{tmPdf=setTimeout(()=>{try{tarefa.destroy()}catch(x){}rej(Object.assign(new Error('timeout'),{name:'PdfTimeout'}))},30000)})]);clearTimeout(tmPdf)}
+  catch(e){clearTimeout(tmPdf);try{wk&&wk.destroy()}catch(x){}throw new Error((e&&e.name==='PdfTimeout')?L('Esse PDF demorou demais para abrir e pode estar corrompido.','This PDF took too long to open and may be corrupted.'):(e&&e.name==='PasswordException')?L('Esse PDF tem senha.','This PDF is password protected.'):L('Não consegui ler esse PDF.','Could not read this PDF.'))}
+    const n=doc.numPages,pages=[];
   const medida=v=>{const k=escala(v);return {w:Math.round(v.width*k),h:Math.round(v.height*k)}};
-  const p1=await doc.getPage(1),m1=medida(p1.getViewport({scale:1}));p1.cleanup();
+  const p1=await comLimite(doc.getPage(1),20000,L('Esse PDF demorou demais para abrir a primeira página e pode estar corrompido.','This PDF took too long to open its first page and may be corrupted.')),m1=medida(p1.getViewport({scale:1}));p1.cleanup();
   for(let p=1;p<=n;p++)pages.push({name:'p'+String(p).padStart(4,'0')+'.jpg',blob:null,w:m1.w,h:m1.h,n:p});
   let vivo=true;const dbg=pages.dbg={med:1,n,ren:'',erro:'',ms:''};
   // mede o tamanho de TODAS as paginas antes de o leitor abrir (espera no maximo 2,5 s; o resto termina em segundo plano).

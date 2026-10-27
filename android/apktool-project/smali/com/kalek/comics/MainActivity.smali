@@ -50,11 +50,17 @@
     new-instance v1, Landroid/webkit/WebViewClient;
     invoke-direct {v1}, Landroid/webkit/WebViewClient;-><init>()V
     invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setWebViewClient(Landroid/webkit/WebViewClient;)V
+    new-instance v1, Lcom/kalek/comics/MainActivity$4;
+    invoke-direct {v1, p0}, Lcom/kalek/comics/MainActivity$4;-><init>(Lcom/kalek/comics/MainActivity;)V
+    invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setDownloadListener(Landroid/webkit/DownloadListener;)V
 
     const v1, -0xe8e5df
     invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setBackgroundColor(I)V
     const/4 v1, 0x2
     invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setOverScrollMode(I)V
+    const/4 v1, 0x0
+    invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setVerticalScrollBarEnabled(Z)V
+    invoke-virtual {v0, v1}, Landroid/webkit/WebView;->setHorizontalScrollBarEnabled(Z)V
     sget v1, Landroid/os/Build$VERSION;->SDK_INT:I
     const/16 v2, 0x1a
     if-lt v1, v2, :sem_prioridade

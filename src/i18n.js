@@ -1,5 +1,17 @@
 /* ---------- idioma (PT/EN) ---------- */
 const EN={
+'Biblioteca: mover para qualquer categoria, selecionar vários títulos de uma vez e escolher se o arquivo entra como HQ ou mangá.':'Library: move to any category, select several titles at once and choose whether a file is added as comics or manga.',
+'Aviso de nova versão ao abrir o app (Android).':'New-version notice when you open the app (Android).',
+'Novidades':'What\'s new','Voltar leva para a biblioteca (HQ e mangá).':'Back goes to the library (comics and manga).',
+'<b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.':'<b>✂ Trim borders</b> now also in comics, in Full page and Vertical.',
+'<b>Lupa</b>: no modo guiado, segure o dedo na tela para ver a página inteira ampliada e ler balões cortados.':'<b>Magnifier</b>: in guided mode, hold your finger on the screen to see the whole page enlarged and read cropped balloons.','Vertical das HQs: fundo da página e filtros de cores (preto e branco) agora funcionam.':'Comics Vertical mode: page background and color filters (black and white) now work.','Passar página mais responsivo e efeitos de virar página também com zoom.':'More responsive page turning, and page-turn effects also work while zoomed.','Vertical das HQs fluido e efeitos de virar página mais suaves.':'Smooth Vertical mode for comics and smoother page-turn effects.',
+'Mangá com zoom: a próxima página começa no canto certo da leitura.':'Manga with zoom: the next page starts at the right corner for reading.',
+'Versões anteriores e erros conhecidos':'Previous versions and known issues',
+'<b>0.60</b> Vertical com rolagem contínua e zoom livre, no mangá e nas HQs.':'<b>0.60</b> Vertical with continuous scroll and free zoom, in manga and comics.',
+'<b>0.57</b> Chat no celular: o teclado não cobre mais o campo de digitação.':'<b>0.57</b> Chat on phones: the keyboard no longer covers the text box.',
+'<b>Conhecido:</b> Cortar bordas não vale no modo Guiado; em páginas sem margem de verdade o corte não muda nada.':'<b>Known:</b> Trim borders does not apply in Guided mode; on pages with no real margin it changes nothing.',
+'<b>Achou um erro?</b> Envie um e-mail para lanzzinhos@gmail.com ou abra uma Issue no GitHub (repositório IntuneOverseer/ComicXD).':'<b>Found a bug?</b> Send an email to lanzzinhos@gmail.com or open an Issue on GitHub (IntuneOverseer/ComicXD repository).',
+'Funciona também no modo Vertical. No mangá, em Página inteira, a próxima página começa no canto onde a leitura começa (direita no modo Mangá, esquerda no Ocidental).':'Also works in Vertical mode. In manga, in Full page, the next page starts at the corner where reading begins (right in Manga mode, left in Western).',
 'leitura guiada de quadrinhos · quadro a quadro · feito no Brasil':'guided comic reading · panel by panel · made in Brazil',
 'Perfil':'Profile','＋ Abrir HQ ou mangá':'＋ Open comic or manga','Continuar lendo':'Continue reading','Minha estante':'My shelf',
 'Abra uma HQ ou mangá':'Open a comic or manga','CBR, CBZ, ZIP, RAR, PDF, EPUB ou várias imagens · fica guardada neste aparelho':'CBR, CBZ, ZIP, RAR, PDF, EPUB or several images · stays saved on this device',
@@ -27,7 +39,7 @@ const EN={
 'Animar transições':'Animate transitions','Desligado = corte seco, sem animação: máxima fluidez em tablet fraco.':'Off = hard cut, no animation: maximum smoothness on a weak tablet.',
 'Velocidade da transição:':'Transition speed:','Menor = mais rápido. Padrão: 0,6 s.':'Lower = faster. Default: 0.6 s.',
 'Interface':'Interface','Automática (detecta o aparelho)':'Automatic (detects the device)','Computador (mouse e teclado)':'Computer (mouse and keyboard)','Tablet / celular (toque)':'Tablet / phone (touch)',
-'Página inteira antes do 1º quadro':'Full page before the 1st panel','Página inteira depois do último quadro':'Full page after the last panel',
+'Lupa ao segurar (leitura guiada)':'Hold for magnifier (guided reading)','Página inteira antes do 1º quadro':'Full page before the 1st panel','Página inteira depois do último quadro':'Full page after the last panel',
 'Fora do quadro':'Outside the panel','Cor da página':'Page color','Preto':'Black','Escurecido (vê o quadro anterior ao fundo)':'Dimmed (see the previous panel behind)',
 'Escurecimento do fora do quadro:':'Outside dimming:','Maior = mais escuro; menor = vê melhor o quadro anterior ao fundo.':'Higher = darker; lower = see the previous panel better.',
 'Guiada':'Guided','Página inteira':'Full page','Escurecer':'Dim','Páginas':'Pages','Voltar':'Back',
@@ -62,10 +74,14 @@ EN['Preto e branco']='Black and white';
 EN["Cores da página"]="Page colors";
 EN["Colorido (original)"]="Color (original)";
 EN["Preto e branco forte (contornos marcados)"]="Strong black and white (bold outlines)";
-EN["Preto, branco e vermelho"]="Black, white and red";
-EN["Vale para HQ e Mangá. No Webtoon, “Preto, branco e vermelho” fica como preto e branco forte."]="Applies to comics and manga. In Webtoon, “Black, white and red” works as strong black and white.";
+EN["Preto, branco e sangue"]="Black, white and blood";
+EN["Vale para HQ e Mangá. No Webtoon, “Preto, branco e sangue” fica como preto e branco forte."]="Applies to comics and manga. In Webtoon, “Black, white and blood” works as strong black and white.";
 
 EN["Funciona na <b>Página inteira</b> (HQ) e no Mangá. O Webtoon rola direto, sem efeito."]="Works in <b>Full page</b> (comics) and Manga. Webtoon scrolls directly, without effect.";
+EN["<b>Marcar quadros</b>: nas HQs, circule cada quadro com o dedo (✎ no menu) e a leitura guiada segue a sua ordem. Salva sozinho."]="<b>Mark panels</b>: in comics, circle each panel with your finger (✎ in the menu) and guided reading follows your order. Saves automatically.";
+EN["<b>Marcar quadros</b><span> ✎ no menu: circule cada quadro com o dedo, na ordem de leitura; o número aparece sozinho. Vale para aquela HQ e salva automático</span>"]="<b>Mark panels</b><span> ✎ in the menu: circle each panel with your finger, in reading order; the number appears by itself. Applies to that comic and saves automatically</span>";
+EN["Funciona na <b>Página inteira</b> (HQ). O Vertical rola direto, sem efeito."]="Works in <b>Full page</b> (comics). Vertical scrolls directly, without effect.";
+EN["Funciona na <b>Página inteira</b> do Mangá. O Webtoon e o Vertical rolam direto, sem efeito."]="Works in <b>Full page</b> for Manga. Webtoon and Vertical scroll directly, without effect.";
 EN["⚠ Bloqueado no modo Guiado: toque em “Página inteira” para usar o efeito de virar página."]="⚠ Blocked in Guided mode: tap “Full page” to use the page-turn effect.";
 
 EN["Ajustar à largura"]="Fit width";

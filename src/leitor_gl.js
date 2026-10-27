@@ -5,7 +5,7 @@
 const wrap=$('wrap'),cv=$('gl'),msk=$('msk'),mskp=$('mskp');
 let pi=0,si=0,guided=store.get('hq-modo','g')==='g',HQV=!!store.get('hq-vert',false),HC=!!store.get('hq-crop',false),cam={cx:0,cy:0,z:1,r:[0,0,1,1]},anim=null,cur=null,fade=null,VW=1,VH=1,DPR=1,bg=[0,0,0];
 const easeK=t=>(1-Math.exp(-5*t))/(1-Math.exp(-5));
-const CFG=Object.assign({vel:0.6,entrar:false,sair:false,fora:'pagina',esc:0.72,anim:true},store.get('hq-cfg',{}));
+const CFG=Object.assign({vel:0.6,entrar:false,sair:false,fora:'pagina',esc:0.72,anim:true,lupa:true},store.get('hq-cfg',{}));
 if(!store.get('hq-fora15',false)){CFG.fora='escura';store.set('hq-fora15',true);store.set('hq-cfg',CFG)}   // 0.15: liga o modo escurecido (ve o quadro anterior ao fundo)
 const RM=matchMedia('(prefers-reduced-motion: reduce)');
 function salvarCfg(){store.set('hq-cfg',CFG)}
@@ -53,17 +53,17 @@ function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_S
 function montarGL(){
   const VS='attribute vec2 a;uniform vec4 r;uniform vec2 s;varying vec2 uv;void main(){uv=a;vec2 p=r.xy+a*r.zw;gl_Position=vec4(p.x/s.x*2.0-1.0,1.0-p.y/s.y*2.0,0.0,1.0);}';
   const PR='#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n';
-  P1=prog(VS,PR+'varying vec2 uv;uniform sampler2D t;uniform float al;uniform float fm;uniform vec2 px;\n'+
+  P1=prog(VS,PR+'varying vec2 uv;uniform sampler2D t;uniform float al;uniform float fm;uniform vec2 px;uniform vec3 lc;\n'+
  'float lm(vec3 c){return dot(c,vec3(0.299,0.587,0.114));}\n'+
- 'void main(){vec3 o=texture2D(t,uv).rgb;vec3 c=o;\n'+
+ 'void main(){if(lc.z>0.0&&distance(gl_FragCoord.xy,lc.xy)>lc.z)discard;vec3 o=texture2D(t,uv).rgb;vec3 c=o;\n'+
  'if(fm>0.5){float l=lm(o);\n'+
  ' if(fm<1.5){c=vec3(l);}else{\n'+
  '  float a=(lm(texture2D(t,uv+vec2(px.x,0.0)).rgb)+lm(texture2D(t,uv-vec2(px.x,0.0)).rgb)+lm(texture2D(t,uv+vec2(0.0,px.y)).rgb)+lm(texture2D(t,uv-vec2(0.0,px.y)).rgb))*0.25;\n'+
  '  float s=l+1.3*(l-a);s=clamp((s-0.5)*1.45+0.5,0.0,1.0);s=s*s*(3.0-2.0*s)*0.35+s*0.65;c=vec3(s);\n'+
- '  if(fm>2.5){float rd=clamp((o.r-max(o.g,o.b)-0.22)*4.5,0.0,1.0);c=mix(vec3(s),vec3(min(1.0,o.r*1.08),o.g*0.55,o.b*0.55),rd);}}}\n'+
+ '  if(fm>2.5){float s2=clamp((l+0.6*(l-a)-0.06)/0.88,0.0,1.0);s2=s2*s2*(3.0-2.0*s2)*0.3+s2*0.7;float ch=o.r-max(o.g,o.b);float w=smoothstep(0.10,0.24,ch);float al=smoothstep(0.05,0.40,ch);float d=clamp(o.r/0.9,0.0,1.0);vec3 rc=mix(vec3(1.0),vec3(0.89,0.09,0.11),al)*d;c=mix(vec3(s2),rc,w);}}}\n'+
  'gl_FragColor=vec4(c*al,al);}');
   P2=prog(VS,PR+'uniform vec4 c;void main(){gl_FragColor=c;}');
-  for(const [P,U,n] of [[P1,U1,['r','s','t','al','fm','px']],[P2,U2,['r','s','c']]])for(const k of n)U[k]=gl.getUniformLocation(P,k);
+  for(const [P,U,n] of [[P1,U1,['r','s','t','al','fm','px','lc']],[P2,U2,['r','s','c']]])for(const k of n)U[k]=gl.getUniformLocation(P,k);
   const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0,1,0,0,1,1,1]),gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
   FB=null;PX=null;try{PX=prog(VS,PR+'\nvarying vec2 uv;uniform sampler2D A;uniform sampler2D B;uniform float q;uniform vec2 d;uniform float mode;uniform vec3 bgc;\nvec3 bk(vec3 t,float lit){float k=smoothstep(0.0,0.07,distance(t,bgc));return mix(bgc,mix(vec3(0.95,0.94,0.91),t,0.2),k)*lit;}\nvec4 T(vec2 p){return texture2D(A,vec2(p.x,1.0-p.y));}\nvec4 U(vec2 p){return texture2D(B,vec2(p.x,1.0-p.y));}\nbool inb(vec2 p){return p.x>=0.0&&p.x<=1.0&&p.y>=0.0&&p.y<=1.0;}\nvoid main(){\n  vec2 o=vec2(d.x<0.0?1.0:0.0,d.y<0.0?1.0:0.0);float s=dot(uv-o,d);vec3 col=vec3(0.0);vec3 paper=vec3(0.95,0.94,0.91);\n  if(mode<0.5){\n    float R=0.085;float PI=3.14159265;float f=q*(1.0+R);float e=2.0*f-PI*R;bool ok=false;\n    if(s<f){\n      if(s>=f-R){float th=PI-asin(clamp((f-s)/R,-1.0,1.0));float s0=f-R*th;\n        if(s0>=0.0){vec2 p=uv+d*(s0-s);col=bk(T(p).rgb,1.0-0.4*sin(th));ok=true;}}\n      if(!ok){float k=max(0.0,f-R-s);col=U(uv).rgb*(1.0-0.55*exp(-k*16.0));}\n    }else{\n      if(f>PI*R&&s<=e){float s0=e-s;vec2 p=uv+d*(s0-s);col=bk(T(p).rgb,1.0);}\n      else{float b=(f>PI*R)?e:f;col=T(uv).rgb*(1.0-0.42*exp(-(s-b)*14.0));}\n    }\n  }else if(mode<1.5){\n    vec2 pt=uv-d*q;if(inb(pt))col=T(pt).rgb;else col=U(uv+d*(1.0-q)).rgb;\n  }else if(mode<2.5){\n    vec2 pt=uv-d*q;\n    if(inb(pt))col=T(pt).rgb;else{float k=0.94+0.06*q;vec2 pu=(uv-0.5)/k+0.5;col=U(pu).rgb*(0.55+0.45*q)*(1.0-0.5*exp(-(q-s)*14.0));}\n  }else if(mode<3.5){\n    vec2 pt=uv+d*(1.0-q);\n    if(inb(pt))col=U(pt).rgb;else col=T(uv).rgb*(1.0-0.45*q)*(1.0-0.5*exp(-(s-q)*14.0));\n  }else{\n    float k=1.0+0.22*q;vec2 pt=(uv-0.5)/k+0.5;float a=1.0-smoothstep(0.0,1.0,q);col=mix(U(uv).rgb,T(pt).rgb,a);\n  }\n  gl_FragColor=vec4(col,1.0);\n}\n');for(const k of ['r','s','A','B','q','d','mode','bgc'])UX[k]=gl.getUniformLocation(PX,k)}catch(e){PX=null}
@@ -85,10 +85,10 @@ window.__lv=()=>({pi,z:+(cam.z/fitZ()).toFixed(2),cy:Math.round(cam.cy),cx:Math.
 window.__fx=(fx,u,fwd)=>{const o=texs.get(pi+(fwd?-1:1));if(!o||!cur){return 'sem textura vizinha'}tr={e:o,c:freeFull(),t0:0,u,fx:FXS[fx],fwd,d:fxDir(),pronto:false,fijo:true};pedir();return 'ok'};window.__fxFim=()=>{tr=null;pedir()};
 $('cfg-fx').value=FXS[FXSEL]?FXSEL:'nenhum';$('cfg-fx').onchange=e=>{FXSEL=e.target.value;store.set('hq-fx',FXSEL)};
 function pbAplicar(redesenhar){const m=Object.keys(PBS).find(k=>PBS[k]===PBM)||'normal';
-  const w=$('wt');if(w)w.style.filter='';if(redesenhar)pedir()}
+  const w=$('wt');if(w)for(let k=0;k<4;k++)w.classList.toggle('pb'+k,k>0&&k===PBM&&!ehManga());if(redesenhar)pedir()}   /* v0.68b: o Vertical (HQ) usa filtro CSS/SVG equivalente ao do shader */
 $('cfg-pb').value=Object.keys(PBS).find(k=>PBS[k]===PBM)||'normal';
 $('cfg-pb').onchange=e=>{PBM=PBS[e.target.value]||0;store.set('hq-pb',e.target.value);pbAplicar(true)};pbAplicar(false);
-function fxAtual(){if(!PX||!book||wtOn)return null;if(!book.manga&&guided)return null;if(!book.manga&&mgDir()==='v')return null;if(book.manga){if(MG.modo==='v')return null;if(livreWeb()&&(LW||LZ>1.04||LS>0))return null}return FXS[FXSEL]||null}
+function fxAtual(){if(!PX||!book||wtOn)return null;if(!book.manga&&guided)return null;if(!book.manga&&mgDir()==='v')return null;if(book.manga){if(MG.modo==='v')return null}return FXS[FXSEL]||null}   /* v0.68: o efeito vale também com zoom (página inteira ou ampliada) */
 let _fxAv=null;
 function fxAviso(){const bloq=!!book&&!book.manga&&guided;if(_fxAv===bloq)return;_fxAv=bloq;const a=$('fx-aviso'),sel=$('cfg-fx');if(!a)return;a.hidden=!bloq;if(sel)sel.disabled=bloq}
 function fxDir(){const m=mgDir()||'ltr';return m==='rtl'?[1,0]:m==='ltr'?[-1,0]:[0,-1]}
@@ -122,7 +122,7 @@ function desenhar(c){if(!gl||perdeu)return;
   if(tr&&tr.e.tex&&cur&&cur.tex){compor(c);return}gl.viewport(0,0,cv.width,cv.height);gl.clearColor(bg[0]/255,bg[1]/255,bg[2]/255,1);gl.clear(gl.COLOR_BUFFER_BIT);
   if(cur&&cur.tex){gl.useProgram(P1);gl.uniform2f(U1.s,VW,VH);gl.uniform1i(U1.t,0);gl.activeTexture(gl.TEXTURE0);pagina(cur,c,1);
     if(fade&&fade.e.tex){gl.enable(gl.BLEND);pagina(fade.e,fade.c,fade.a);gl.disable(gl.BLEND)}
-    janela(c)}}
+    janela(c);if(LUPA.on)lupaDesenhar(c)}}
 
 /* ---------- laco de quadros: so roda enquanto algo se mexe ---------- */
 const DG={ult:null,ts:0,n:0,max:0,lentos:0,soma:0,lat:0};
@@ -170,7 +170,18 @@ function texDe(i,urgente){if(i<0||i>=book.pages.length)return Promise.resolve(nu
     // envio para a GPU so com a tela parada (nunca no meio de um movimento), a nao ser que a pagina seja pedida agora
     while(!e.urg&&(anim||fade||performance.now()-lastInput<300))await dorme(120);
     if(texs.get(i)!==e||!gl||perdeu){bm.close();return e}
-    const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bm);bm.close();
+    const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+    const fat=(!e.urg&&bm.width*bm.height>1.4e6)?Math.min(6,Math.ceil(bm.width*bm.height/1.2e6)):0;
+    if(!fat){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bm);bm.close()}
+    else{   // pagina grande que ninguem pediu ainda: envia em fatias, uma por quadro e so com a tela parada (nao engasga o fim do efeito)
+      const W=bm.width,Hh=bm.height,h1=Math.ceil(Hh/fat);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,W,Hh,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      for(let y=0;y<Hh;y+=h1){const hh=Math.min(h1,Hh-y);
+        const sl=await createImageBitmap(bm,0,y,W,hh,{premultiplyAlpha:'none'});
+        while(!e.urg&&(anim||fade||tr||performance.now()-lastInput<300))await dorme(100);
+        if(texs.get(i)!==e||!gl||perdeu){sl.close();bm.close();gl&&gl.deleteTexture(t);return e}
+        await new Promise(r=>requestAnimationFrame(r));
+        gl.bindTexture(gl.TEXTURE_2D,t);gl.texSubImage2D(gl.TEXTURE_2D,0,0,y,gl.RGBA,gl.UNSIGNED_BYTE,sl);sl.close()}
+      bm.close()}
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     if(GLI.v2){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);if(GLI.aniso)gl.texParameterf(gl.TEXTURE_2D,GLI.aniso.TEXTURE_MAX_ANISOTROPY_EXT,2)}
     else gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
@@ -179,7 +190,12 @@ function texDe(i,urgente){if(i<0||i>=book.pages.length)return Promise.resolve(nu
 function limparTex(){if(!book)return;for(const [k,v] of [...texs])if(Math.abs(k-pi)>2&&v!==cur&&!(fade&&fade.e===v)&&!(tr&&tr.e===v)){if(v.tex&&gl)gl.deleteTexture(v.tex);v.tex=null;texs.delete(k)}}
 function soltarTudo(){for(const v of texs.values()){if(v.tex&&gl)gl.deleteTexture(v.tex);v.tex=null}texs.clear();cur=null;fade=null;tr=null;anim=null}
 // depois que a pagina assenta, envia a proxima, a anterior e a seguinte: virar a pagina nao espera JPEG nem GPU
-function preCarregar(tok){setTimeout(async()=>{for(const k of [pi+1,pi-1,pi+2]){if(tok!==openToken)return;try{await texDe(k)}catch(e){}}limparTex()},400)}
+function preCarregar(tok){setTimeout(async()=>{
+  // uma pagina por vez, com folga entre elas e so com a tela parada: o envio de cada textura grande para a GPU nao se junta no fim do efeito de virar pagina
+  for(const k of [pi+1,pi-1,pi+2]){if(tok!==openToken)return;
+    while(tok===openToken&&(anim||fade||tr||performance.now()-lastInput<500))await dorme(150);if(tok!==openToken)return;
+    const ja=texs.has(k);try{await texDe(k)}catch(e){}if(!ja)await dorme(450)}
+  limparTex()},700)}
 function mostrarPagina(e,c,fadeOn){const old=cur,oc=camAgora();pararAnim();cur=e;cam=c;pintarFundo();
   const fx=(old&&old!==e&&old.tex&&fadeOn&&CFG.anim&&!RM.matches)?fxAtual():null;
   tr=fx?{e:old,c:oc,t0:null,u:0,fx,fwd:trFwd,d:fxDir(),pronto:false}:null;
@@ -187,6 +203,7 @@ function mostrarPagina(e,c,fadeOn){const old=cur,oc=camAgora();pararAnim();cur=e
 
 /* ---------- planos ---------- */
 function ensurePlan(i){if(book.manga||i<0||i>=book.pages.length||book.plans[i]||book.inflight.has(i))return book.inflight.get(i);
+  {const mp=typeof mkPlano==='function'&&mkPlano(i);if(mp){book.plans[i]=mp;return Promise.resolve(mp)}}
   const z=ZOOM,plans=book.plans,infl=book.inflight,ck=VERSAO_PLANO+'|z'+z+'|'+book.key+'|'+i+'|'+book.pages[i].blob.size;
   const pr=cacheGet(ck).then(c=>c||analyze(book.pages[i].blob,i,z).then(r=>{cachePut(ck,r);return r})).then(r=>{plans[i]=r;infl.delete(i);return r}).catch(err=>{infl.delete(i);const e=texs.get(i),w=e&&e.w||1000,h=e&&e.h||1600;
     plans[i]=Object.assign(provisorio(w,h),{provisorio:false,erro:String(err)});return plans[i]});
@@ -203,7 +220,7 @@ async function openPage(i,last){const tok=++openToken;wantPage=i;fimFechar();if(
   $('work').hidden=true;esperando=false;
   const trocou=!!cur&&cur!==e;trFwd=i>=pi;pi=i;prefetch();const p=curPlan();
   let c;if(!guided){si=0;c=freeFull();const zS=(!LW&&LS>0)?Math.min(6,LS/p.h/Math.min(VW/p.w,VH/p.h)):0;   /* mesma escala da pagina anterior: simples->dupla e dupla->simples */
-    if(livreWeb()&&(LW||(LS>0?zS>1.04:LZ>1.04))){const zr=LW?Math.max(1,(VW/p.w)/Math.min(VW/p.w,VH/p.h)):(LS>0?zS:LZ),q=pose(p,document.documentElement.dataset.modo==='toque'?0:(LW?.5:LX)*p.w,last?p.h:0,zr);c={cx:q.cx,cy:q.cy,z:q.z,r:[0,0,p.w,p.h]}}}else{si=last?sMax(p):sMin(p);c=alvoDoPasso(p)}
+    if(livreWeb()&&(LW||(LS>0?zS>1.04:LZ>1.04))){const zr=LW?Math.max(1,(VW/p.w)/Math.min(VW/p.w,VH/p.h)):(LS>0?zS:LZ),md=ehManga()?mgDir():null,px=md==='rtl'?(last?0:p.w):md==='ltr'?(last?p.w:0):(document.documentElement.dataset.modo==='toque'?0:(LW?.5:LX)*p.w),q=pose(p,px,last?p.h:0,zr);c={cx:q.cx,cy:q.cy,z:q.z,r:[0,0,p.w,p.h]}}}else{si=last?sMax(p):sMin(p);c=alvoDoPasso(p)}
   mostrarPagina(e,c,trocou);label();agendarSalvar();preCarregar(tok)}
 // aviso de fim: so aparece quando a pessoa tenta avancar alem da ultima pagina
 let fimOn=false,fimT=0;
@@ -234,7 +251,7 @@ function agendarSalvar(){clearTimeout(salvarT);salvarT=setTimeout(()=>{if(anim||
 addEventListener('pagehide',()=>save());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else pedir()});
 let toastT=0;function toast(t){const el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>{el.style.opacity=0},1500)}
-function botoesHQ(){const v=!ehManga()&&HQV;$('m-g').classList.toggle('on',guided);$('m-l').classList.toggle('on',!guided&&!v);if($('m-v'))$('m-v').classList.toggle('on',!guided&&v);if(!ehManga()&&$('mg-crop')){$('mg-crop').classList.toggle('on',HC);$('mg-crop').classList.toggle('inativo',guided)}}
+function botoesHQ(){const v=!ehManga()&&HQV;if(typeof bgSelUI==='function')bgSelUI();$('m-g').classList.toggle('on',guided);$('m-l').classList.toggle('on',!guided&&!v);if($('m-v'))$('m-v').classList.toggle('on',!guided&&v);if(!ehManga()&&$('mg-crop')){$('mg-crop').classList.toggle('on',HC);$('mg-crop').classList.toggle('inativo',guided)}}
 function setMode(g,silencio){guided=g;if(!ehManga())store.set('hq-modo',g?'g':'l');botoesHQ();
   if(!book||!cur)return;if(!wtOn&&!ehManga()&&!!cur.crop!==!!cropQuer()){soltarTudo();openPage(pi);if(!silencio)toast(TR(g?'Leitura guiada':'Página inteira · pinça ou dois toques para zoom'));return}
   if(!silencio)toast(TR(g?'Leitura guiada':(!ehManga()&&HQV)?'Vertical · deslize ou toque embaixo para rolar':'Página inteira · pinça ou dois toques para zoom'));
@@ -269,6 +286,21 @@ function duploToque(x,y){if(livreWeb()&&!guided){if(naPaginaInteira()){LW=false;
   if(!naPaginaInteira()){mover(freeFull(),320);return}
   setMode(true)}
 
+/* ---------- lupa (0.69): segurar o dedo no modo guiado mostra a pagina inteira ampliada embaixo do dedo ---------- */
+const LUPA={on:false,x:0,y:0,lx:0,ly:0,tm:0,R:96,Z:2.3};
+function lupaRaio(){return Math.round(Math.max(84,Math.min(130,Math.min(VW,VH)*0.17)))}
+function lupaPode(){return !!(CFG.lupa&&guided&&book&&cur&&cur.tex&&!wtOn&&!tr&&$('ajustes').hidden)}
+function lupaPos(){const R=LUPA.R,el=$('lupa');if(!el)return;const lx=Math.max(R+4,Math.min(VW-R-4,LUPA.x));let ly=LUPA.y-R*1.4;if(ly<R+4)ly=LUPA.y+R*1.4;ly=Math.max(R+4,Math.min(VH-R-4,ly));LUPA.lx=lx;LUPA.ly=ly;
+  el.style.width=el.style.height=(R*2)+'px';el.style.transform='translate('+(lx-R)+'px,'+(ly-R)+'px)'}
+function lupaLigar(x,y){if(!lupaPode())return false;LUPA.R=lupaRaio();LUPA.x=x;LUPA.y=y;LUPA.on=true;lupaPos();$('lupa').hidden=false;try{if(navigator.vibrate)navigator.vibrate(12)}catch(e){}pedir();return true}
+function lupaMover(x,y){LUPA.x=x;LUPA.y=y;lupaPos();pedir()}
+function lupaDesligar(){clearTimeout(LUPA.tm);if(!LUPA.on)return;LUPA.on=false;const el=$('lupa');if(el)el.hidden=true;pedir()}
+function lupaEmpurra(v,max){const D=LUPA.R/LUPA.Z*1.3,M=LUPA.R*1.2;if(v<M)return v-D*(1-Math.max(0,v)/M);if(v>max-M)return v+D*(1-Math.max(0,max-v)/M);return v}   // perto da borda a lupa passa a mostrar o que fica fora da tela (balao cortado)
+function lupaDesenhar(c){const k=cv.width/VW,z2=c.z*LUPA.Z,px0=c.cx+(LUPA.x-VW/2)/c.z,py0=c.cy+(LUPA.y-VH/2)/c.z,rad=LUPA.R/LUPA.Z/c.z,px=Math.min(Math.max(c.cx+(lupaEmpurra(LUPA.x,VW)-VW/2)/c.z,Math.min(px0,rad)),Math.max(px0,cur.w-rad)),py=Math.min(Math.max(c.cy+(lupaEmpurra(LUPA.y,VH)-VH/2)/c.z,Math.min(py0,rad)),Math.max(py0,cur.h-rad));   // o empurrao nunca deixa a lupa mostrar vazio alem da borda da pagina
+  const c2={cx:px-(LUPA.lx-VW/2)/z2,cy:py-(LUPA.ly-VH/2)/z2,z:z2};
+  gl.useProgram(P1);gl.uniform2f(U1.s,VW,VH);gl.uniform1i(U1.t,0);gl.activeTexture(gl.TEXTURE0);gl.uniform3f(U1.lc,LUPA.lx*k,(VH-LUPA.ly)*k,LUPA.R*k);
+  pagina(cur,c2,1);gl.uniform3f(U1.lc,0,0,0)}
+
 /* ---------- toques: bordas viram na hora; centro = menu (1 toque) ou zoom (2 toques) ---------- */
 const ptr=new Map();let pinch=null,down=null,lastTap=0,tapTimer=null,trilha=[];
 function bordaX(d){if(!book||!cur||!curPlan())return true;const p=curPlan(),meio=VW/2/cam.z;if(p.w*cam.z<=VW*1.02)return true;return d<0?cam.cx<=meio+1:cam.cx>=p.w-meio-1}
@@ -276,26 +308,29 @@ function bordaY(d){if(!book||!cur||!curPlan())return true;const p=curPlan(),meio
 function pos(e){const r=wrap.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
 wrap.addEventListener('pointerdown',e=>{lastInput=performance.now();if(!$('ajustes').hidden){abrirAjustes(false);return}
   wrap.setPointerCapture(e.pointerId);const q=pos(e);ptr.set(e.pointerId,q);
-  if(ptr.size===2){const [a,b]=[...ptr.values()];if(guided)livreDaqui();pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),m:[(a[0]+b[0])/2,(a[1]+b[1])/2]};down=null}
-  else{down={x:q[0],y:q[1],t:performance.now(),moved:false,bl:bordaX(-1),br:bordaX(1),bt:bordaY(-1),bb:bordaY(1)};trilha=[[q[0],q[1],performance.now()]]}});
+  if(ptr.size===2){const [a,b]=[...ptr.values()];if(guided)livreDaqui();pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),m:[(a[0]+b[0])/2,(a[1]+b[1])/2]};down=null;clearTimeout(LUPA.tm);lupaDesligar()}
+  else{down={x:q[0],y:q[1],t:performance.now(),moved:false,bl:bordaX(-1),br:bordaX(1),bt:bordaY(-1),bb:bordaY(1)};trilha=[[q[0],q[1],performance.now()]];clearTimeout(LUPA.tm);if(guided&&CFG.lupa)LUPA.tm=setTimeout(()=>{if(down&&!down.moved&&ptr.size===1){const r=ptr.values().next().value;if(lupaLigar(r[0],r[1]))down.lupa=true}},380)}});
 wrap.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;lastInput=performance.now();const old=ptr.get(e.pointerId),q=pos(e);ptr.set(e.pointerId,q);
   if(pinch&&ptr.size===2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
     zoomAt(m[0],m[1],d/pinch.d);panBy(m[0]-pinch.m[0],m[1]-pinch.m[1]);pinch={d,m};return}
-  if(!down)return;if(Math.hypot(q[0]-down.x,q[1]-down.y)>10)down.moved=true;
+  if(!down)return;if(LUPA.on){lupaMover(q[0],q[1]);return}if(Math.hypot(q[0]-down.x,q[1]-down.y)>10){down.moved=true;clearTimeout(LUPA.tm)}
   trilha.push([q[0],q[1],performance.now()]);if(trilha.length>6)trilha.shift();
   if(down.moved&&!guided&&!naPaginaInteira())panBy(q[0]-old[0],q[1]-old[1])});
-function deslize(dx,dy){const m=mgDir();
-  if(m==='v'){if(Math.abs(dy)>50&&Math.abs(dy)>1.4*Math.abs(dx)&&(naPaginaInteira()||(livreWeb()&&down&&(dy<0?down.bb:down.bt)))){if(dy<0)next();else prev();return true}return false}
-  if(Math.abs(dx)>50&&Math.abs(dx)>1.4*Math.abs(dy)&&(guided||naPaginaInteira()||(livreWeb()&&down&&(dx<0?down.br:down.bl)))){if((dx<0)!==(m==='rtl'))next();else prev();return true}return false}
+function deslize(dx,dy,dt){const m=mgDir(),mn=(dt||999)<230?22:32;
+  if(m==='v'){if(Math.abs(dy)>mn&&Math.abs(dy)>1.2*Math.abs(dx)&&(naPaginaInteira()||(livreWeb()&&down&&(dy<0?down.bb:down.bt)))){if(dy<0)next();else prev();return true}return false}
+  if(Math.abs(dx)>mn&&Math.abs(dx)>1.2*Math.abs(dy)&&(guided||naPaginaInteira()||(livreWeb()&&down&&(dx<0?down.br:down.bl)))){if((dx<0)!==(m==='rtl'))next();else prev();return true}return false}
 function up(e){if(!ptr.has(e.pointerId))return;lastInput=performance.now();ultimoToque=e.timeStamp||performance.now();const q=pos(e);ptr.delete(e.pointerId);if(ptr.size<2)pinch=null;
+  if(LUPA.on&&ptr.size===0){lupaDesligar();down=null;return}
+  clearTimeout(LUPA.tm);
   if(down&&ptr.size===0){const dt=performance.now()-down.t,dx=q[0]-down.x,dy=q[1]-down.y;
     if(!down.moved&&dt<350)tap(q[0],q[1]);
-    else if(down.moved&&dt<450&&deslize(dx,dy)){}
+    else if(down.moved&&dt<450&&deslize(dx,dy,dt)){}
+    else if(down.moved&&dt<300&&Math.hypot(dx,dy)<=18)tap(q[0],q[1]);   /* toque com o dedo tremendo (mais de 10px, menos de 18px) conta como toque */
     else if(down.moved&&!guided&&!naPaginaInteira()&&trilha.length>1){
       const a=trilha[0],b=trilha[trilha.length-1],tt=Math.max(16,b[2]-a[2]),vx=(b[0]-a[0])/tt,vy=(b[1]-a[1])/tt;
       if(Math.hypot(vx,vy)>0.35)mover(clampFree({...cam,cx:cam.cx-vx*260/cam.z,cy:cam.cy-vy*260/cam.z}),420)}}
   if(ptr.size===0)down=null}
-wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);pinch=null;down=null});
+wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);pinch=null;down=null;lupaDesligar()});wrap.addEventListener('contextmenu',e=>{if(LUPA.on||CFG.lupa&&guided)e.preventDefault()});
 function menuAberto(){return $('reader').classList.contains('menu')}
 function menu(on){$('reader').classList.toggle('menu',on);if(on){if(rotuloSujo)rotuloAgora();else tirasSync()}if(!on)abrirAjustes(false)}
 function tap(x,y){const now=performance.now(),m=mgDir(),centro=m==='v'?(y>VH*0.3&&y<VH*0.7):(x>VW*0.3&&x<VW*0.7);
@@ -399,7 +434,11 @@ $('back').onclick=()=>{if(history.state&&history.state.hq==='leitor'){saindo=tru
 addEventListener('popstate',()=>{if($('reader').hidden)return;
   if(saindo){saindo=false;voltarBiblioteca();return}
   if(!$('grade').hidden){fecharGrade();try{history.pushState({hq:'leitor'},'')}catch(e){}return}
-  if(!$('ajustes').hidden||menuAberto()){menu(false);try{history.pushState({hq:'leitor'},'')}catch(e){}return}voltarBiblioteca()});
+  if(!$('ajustes').hidden||menuAberto()){menu(false);try{history.pushState({hq:'leitor'},'')}catch(e){}return}
+  // trava: gesto/botao "voltar" do aparelho NAO sai mais da leitura; sai so pelo menu (toque no centro > Biblioteca)
+  if(history.state&&history.state.hq==='leitor')return;   // ja esta no estado da leitura (ex.: acabou de fechar o chat)
+  try{history.pushState({hq:'leitor'},'')}catch(e){}
+  if(fimOn)fimFechar();toast(L('Para sair: toque no centro e use "Biblioteca"','To leave: tap the center and use "Library"'))});
 addEventListener('keydown',e=>{if($('reader').hidden||!$('grade').hidden||e.target===$('slider')||(e.target.closest&&e.target.closest('#ajustes,#chat,#link-dlg,#cor-dlg')))return;
   const rtl=mgDir()==='rtl';
   if(e.key===' '||e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();if(livreWeb())livrePasso(1);else next()}
@@ -414,10 +453,11 @@ function abrirAjustes(on){$('ajustes').hidden=!on;$('cfg').setAttribute('aria-ex
 $('cfg').onclick=()=>abrirAjustes($('ajustes').hidden);$('cfg-ok').onclick=()=>abrirAjustes(false);
 const velTxt=()=>{$('cfg-vel-v').textContent=CFG.vel.toFixed(1).replace('.',LANG==='pt'?',':'.')+' s'};
 if($('cfg-ui')){$('cfg-ui').value=store.get('hq-ui','auto');$('cfg-ui').onchange=e=>{store.set('hq-ui',e.target.value);detectarUI()}}
-$('cfg-vel').value=CFG.vel;$('cfg-entrar').checked=CFG.entrar;$('cfg-sair').checked=CFG.sair;$('cfg-fora').value=CFG.fora;velTxt();letraTxt();
+$('cfg-vel').value=CFG.vel;$('cfg-entrar').checked=CFG.entrar;$('cfg-lupa').checked=CFG.lupa!==false;$('cfg-sair').checked=CFG.sair;$('cfg-fora').value=CFG.fora;velTxt();letraTxt();
 const animUI=()=>{$('cfg-anim').checked=CFG.anim;$('cfg-vel').disabled=!CFG.anim;$('cfg-vel').closest('label').style.opacity=CFG.anim?1:.45};animUI();
 $('cfg-anim').onchange=e=>{CFG.anim=e.target.checked;animUI();salvarCfg();if(!CFG.anim){pararAnim();fade=null}toast(TR(CFG.anim?'Animações ligadas':'Corte seco · sem animação'))};
 $('cfg-vel').oninput=e=>{CFG.vel=Math.round(+e.target.value*10)/10;velTxt();salvarCfg()};
+$('cfg-lupa').onchange=e=>{CFG.lupa=e.target.checked;salvarCfg();if(!CFG.lupa)lupaDesligar()};
 $('cfg-entrar').onchange=e=>{CFG.entrar=e.target.checked;salvarCfg();if(book&&guided)goStep(si,true)};
 $('cfg-sair').onchange=e=>{CFG.sair=e.target.checked;salvarCfg();if(book&&guided)goStep(si,true)};
 function foraUI(){$('cfg-fora').value=CFG.fora;$('esc').classList.toggle('on',CFG.fora==='escura');$('cfg-esc-v').textContent=Math.round(CFG.esc*100)+'%'}
@@ -466,3 +506,28 @@ async function renderRecent(){abasUI();const r=store.get('hq-recentes',[]).filte
     b.append(cap,ft);if(it.manga&&it.m&&MGNOME[it.m]){const bd=document.createElement('span');bd.className='bd';bd.textContent=LN(MGNOME[it.m]);b.append(bd)}b.onclick=()=>abrirDaEstante(it);li.append(b,botao(it));ul.append(li);
     libGet(it.key).then(v=>{if(v&&v.capa){const u=URL.createObjectURL(v.capa);capaURLs.push(u);const im=document.createElement('img');im.className='capa';im.alt='';im.src=u;cap.replaceWith(im)}})})}
 $('fab').onclick=()=>$('file').click();$('abrir-top').onclick=()=>$('file').click();
+
+/* v0.68 — aviso de nova versão (só no APK): consulta a última Release do GitHub ao abrir.
+   "Sim" baixa o APK pelo navegador do celular; "Não" fecha e pergunta de novo na próxima abertura. */
+(()=>{if(typeof MODO_FIXO==='undefined'||MODO_FIXO!=='toque'||!/^file:/.test(location.protocol))return;
+const num=s=>String(s).replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
+const maior=(a,b)=>{a=num(a);b=num(b);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x>y}return false};
+const aviso=(v,url)=>{if(document.getElementById('upd'))return;
+  const o=document.createElement('div');o.id='upd';o.setAttribute('role','dialog');
+  o.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,16,.78)';
+  const c=document.createElement('div');c.style.cssText='max-width:360px;width:100%;background:#141830;border:1px solid #2a3158;border-radius:18px;padding:20px;color:#e8eaf6;font:16px/1.4 system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.6)';
+  const h=document.createElement('div');h.style.cssText='font-weight:800;font-size:20px;color:#ffb300;margin-bottom:8px';h.textContent=L('Nova versão disponível','New version available');
+  const p=document.createElement('div');p.style.cssText='margin-bottom:16px;opacity:.9';p.textContent=L('A versão '+v+' do ComicXD saiu (você está na '+VERSAO+'). Quer baixar agora? O download abre no navegador e depois é só tocar para instalar.','ComicXD '+v+' is out (you have '+VERSAO+'). Download it now? The download opens in your browser, then just tap to install.');
+  const r=document.createElement('div');r.style.cssText='display:flex;gap:10px';
+  const bt=(t,pri)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='flex:1;min-height:46px;border-radius:12px;border:1px solid #2a3158;font:700 16px system-ui,sans-serif;'+(pri?'background:linear-gradient(90deg,#ff4d6d,#ffb300);color:#1a0b00;border:0':'background:#1d2244;color:#e8eaf6');return b};
+  const nao=bt(L('Não','No'),0),sim=bt(L('Sim, baixar','Yes, download'),1);
+  nao.onclick=()=>o.remove();
+  sim.onclick=()=>{o.remove();try{const f=document.createElement('iframe');f.style.display='none';f.src=url;document.body.appendChild(f);setTimeout(()=>f.remove(),60000)}catch(e){}};
+  r.append(nao,sim);c.append(h,p,r);o.append(c);document.body.appendChild(o)};
+const checar=()=>{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
+  fetch('https://api.github.com/repos/IntuneOverseer/ComicXD/releases/latest',{signal:ac.signal,headers:{Accept:'application/vnd.github+json'}})
+  .then(r=>r.ok?r.json():null).then(j=>{clearTimeout(t);if(!j||!j.tag_name||!maior(j.tag_name,VERSAO))return;
+    const a=(j.assets||[]).find(x=>/\.apk$/i.test(x.name||''));if(!a)return;aviso(j.tag_name.replace(/^v/i,''),a.browser_download_url)}).catch(()=>{clearTimeout(t)})};
+let ult=0;const rodar=()=>{ult=Date.now();checar()};setTimeout(rodar,2500);
+/* ao voltar para o app (depois de sair e voltar), confere de novo se já passaram 3 min da última checagem */
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-ult>180000&&!document.getElementById('upd'))rodar()})})();

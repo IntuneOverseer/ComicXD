@@ -37,8 +37,8 @@ main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:6px max(24px,env(s
 .sec::before{content:"";width:6px;height:22px;background:var(--grad);transform:skewX(-14deg);border-radius:2px}
 
 #hero{position:relative;display:flex;gap:22px;align-items:center;padding:22px;border-radius:24px;overflow:hidden;border:1px solid var(--line);background:var(--bg2);min-height:230px;cursor:pointer;text-align:left;width:100%;color:inherit}
-#hero .bg{position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;filter:blur(26px) brightness(.42) saturate(1.3);transform:translateZ(0)}
-#hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(var(--s1),.55),rgba(var(--s1),.1))}
+#hero .bg{position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;object-position:50% 60%;filter:blur(4px) brightness(.55) saturate(1.1);transform:translateZ(0)}
+#hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(var(--s1),.38),rgba(var(--s1),.04)),linear-gradient(180deg,rgba(var(--s1),0) 45%,rgba(var(--s1),.55))}
 #hero>*{position:relative;z-index:1}
 #hero .capa{flex:none;width:clamp(120px,22vw,170px);aspect-ratio:2/3;border-radius:14px;object-fit:cover;background:var(--panel);box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.12)}
 #hero .capa.vazia{display:flex;align-items:center;justify-content:center;font:900 44px var(--ui);color:var(--dim)}
@@ -560,3 +560,51 @@ html,body{max-width:100%;overflow-x:clip}
 #reader:has(#dica:not([hidden])) .barra{visibility:hidden}
 #dica,html[data-leitura=manga] #dica{padding-bottom:16px}
 }
+/* 0.65: APK (toque) sem barra de rolagem na tela inicial */
+html[data-modo=toque],html[data-modo=toque] body,html[data-modo=toque] #home,html[data-modo=toque] #home *,html[data-modo=toque] #bib,html[data-modo=toque] #bib *{scrollbar-width:none}
+html[data-modo=toque]::-webkit-scrollbar,html[data-modo=toque] body::-webkit-scrollbar,html[data-modo=toque] #home::-webkit-scrollbar,html[data-modo=toque] #home *::-webkit-scrollbar,html[data-modo=toque] #bib::-webkit-scrollbar,html[data-modo=toque] #bib *::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* 0.68: cartao Novidades */
+.how .nov ul{margin:0;padding:0 0 0 18px;color:var(--dim);font-size:15.5px;display:flex;flex-direction:column;gap:4px}
+.how .nov details{margin-top:8px}
+.how .nov summary{cursor:pointer;color:var(--h2);font:800 14px var(--ui);padding:4px 0}
+.how .nov details ul{margin-top:6px;font-size:14px}
+html[data-modo=web] .how .nov ul{font-size:13.5px}
+
+/* v0.68 seleção em lote na biblioteca */
+#bib-sel{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+#bib-sel .n{font:800 14px var(--ui);color:var(--dim);margin-right:4px}
+#bib-sel .chip:disabled{cursor:default}
+#bib.selmode .bc .rm{display:none}
+.bc.sel .bc-b{outline:3px solid #ffb300;outline-offset:-3px}
+.bc.sel::after{content:'✓';position:absolute;top:6px;right:6px;z-index:4;width:30px;height:30px;border-radius:50%;background:var(--grad);color:var(--on);font:900 18px/30px var(--ui);text-align:center;pointer-events:none}
+
+/* Cores da página (P&B) no Vertical das HQs */
+#wt.pb1 img,#wt.pb1 canvas{filter:grayscale(1)}
+#wt.pb2 img,#wt.pb2 canvas{filter:url(#pbf-forte)}
+#wt.pb3 img,#wt.pb3 canvas{filter:url(#pbf-verm)}
+
+/* lupa (0.69) */
+#lupa{position:absolute;left:0;top:0;border-radius:50%;pointer-events:none;z-index:6;box-sizing:border-box;border:3px solid #ffb21a;box-shadow:0 6px 22px rgba(0,0,0,.55),inset 0 0 0 1px rgba(0,0,0,.35)}
+#lupa[hidden]{display:none}
+/* v0.70 marcar quadros a mao */
+#mk-btn.on{color:#ffb21a}
+#marc{position:absolute;inset:0;z-index:40;background:#05070d;display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none}
+#marc[hidden]{display:none}
+#marc .mk-top{display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:#0b1020}
+#marc .mk-tt{flex:1;min-width:0;text-align:center;font:800 15px var(--ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#marc .mk-st{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px}
+#marc .mk-box{position:relative;touch-action:none}
+#marc .mk-box img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#marc .mk-box svg{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#marc .mk-dica{padding:4px 14px;font:600 12px var(--ui);opacity:.75;text-align:center}
+#marc .mk-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px 10px calc(10px + env(safe-area-inset-bottom));background:#0b1020}
+#marc .ib:disabled{opacity:.35}
+#marc .mk-bar2{display:flex;justify-content:center;padding:0 10px calc(8px + env(safe-area-inset-bottom));background:#0b1020;margin-top:-4px}
+#marc .mk-bar{padding-bottom:2px}
+/* v0.69 titulo completo: quebra em ate 2 linhas e o JS reduz a letra se precisar */
+#topo .title{white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.12;overflow-wrap:anywhere;word-break:normal}
+@media (max-width:820px){#full span,#compacto span,#mk-btn span{display:none}#topo{gap:6px}#topo .title{min-width:96px;flex:1 1 0}}
+#mk-btn.off{opacity:.38;filter:grayscale(1)}
+#mk-btn.sacode{animation:mksac .4s ease}
+@keyframes mksac{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}

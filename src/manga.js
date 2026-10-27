@@ -92,6 +92,7 @@ function mgSair(){
   $('prev').setAttribute('aria-label',L('Voltar','Back'));$('next').setAttribute('aria-label',L('Avançar','Next'));
   if(guidedSalvo!==null){guided=guidedSalvo;guidedSalvo=null}
   try{book&&book.pages&&book.pages.fecha&&book.pages.fecha()}catch(e){}}
+function bgSelUI(){const l=$('lb-mbg');if(l)l.style.display=(ehManga()||(book&&HQV&&!guided))?'':'none'}
 function mgUI(){
   for(const b of document.querySelectorAll('#mseg button'))b.classList.toggle('on',b.dataset.m===MG.modo);
   $('mg-crop').classList.toggle('on',MG.crop);$('cfg-crop').checked=MG.crop;$('cfg-mbg').value=MG.bg;$('cfg-gap').checked=MG.gap;
@@ -99,7 +100,7 @@ function mgUI(){
   const rtl=MG.modo==='rtl';$('slider').style.direction=rtl?'rtl':'';
   $('prev').onclick=rtl?next:prev;$('next').onclick=rtl?prev:next;
   $('prev').setAttribute('aria-label',L(rtl?'Avançar':'Voltar',rtl?'Next':'Back'));$('next').setAttribute('aria-label',L(rtl?'Voltar':'Avançar',rtl?'Back':'Next'));
-  wrap.style.background=mgBgCss();wt.style.background=mgBgCss();if(book&&cur){pintarFundo();pedir()}}
+  bgSelUI();wrap.style.background=mgBgCss();wt.style.background=mgBgCss();if(book&&cur){pintarFundo();pedir()}}
 function setMg(m,quieto){
   if(!ehManga()||MG.modo===m||!MGNOME[m])return;const eraWeb=wtOn;MG.modo=m;mgSalvarCfg();
   const quer=(m==='web'||m==='v');
@@ -117,7 +118,7 @@ function hqCrop(){
   if(wtOn)wtAbrir();else{soltarTudo();openPage(pi)}
   toast(TR(HC?'Bordas cortadas':'Bordas originais'))}
 $('mg-crop').onclick=()=>{if(!book)return;if(ehManga())mgCrop(!MG.crop);else hqCrop()};$('cfg-crop').onchange=e=>{if(ehManga())mgCrop(e.target.checked)};
-$('cfg-mbg').onchange=e=>{MG.bg=e.target.value;mgSalvarCfg();mgUI();if(wtOn)wt.style.background=mgBgCss()};
+$('cfg-mbg').onchange=e=>{MG.bg=e.target.value;mgSalvarCfg();if(ehManga())mgUI();if(wtOn)wt.style.background=mgBgCss()};
 $('cfg-gap').onchange=e=>{MG.gap=e.target.checked;mgSalvarCfg();wt.classList.toggle('gap',MG.gap)};
 
 /* ---------- webtoon: rolagem contínua, só as páginas perto da tela ficam carregadas ---------- */
@@ -125,6 +126,7 @@ let wtObs=null,wtRaf=0,wtMexeu=false,wtAlvo=0,wtTm=[];const wtUrls=new Map();
 function wtAvisar(){}   // aviso removido (0.49)
 function wtAbrir(){
   wtLimpar();wtAvisar(true);wtOn=true;wt.hidden=false;wt.classList.toggle('gap',MG.gap);wt.style.background=mgBgCss();
+  if(typeof pbAplicar==='function')pbAplicar(false);
   const fr=document.createDocumentFragment();
   book.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='it';d.dataset.i=i;d.style.aspectRatio=(p.w&&p.h)?p.w+'/'+p.h:'1/1.45';fr.append(d)});
   wti.append(fr);const bk=book;

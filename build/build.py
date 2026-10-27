@@ -39,7 +39,7 @@ rep("""    await startWorker();
     openReader();""")
 # biblioteca antiga e leitor antigo saem; entram os novos
 cut('let capaURLs=[];\nasync function renderRecent()','/* ---------- leitor ---------- */\nconst cvs=','')
-cut('/* ---------- leitor ---------- */\nconst cvs=','})();\n</script>\n</body>',open('src/leitor_gl.js',encoding='utf-8').read()+open('src/filtro.js',encoding='utf-8').read()+open('src/avatares.js',encoding='utf-8').read()+open('src/chat.js',encoding='utf-8').read()+open('src/saudacoes.js',encoding='utf-8').read()+open('src/perfil.js',encoding='utf-8').read()+'\nrenderRecent();\n')
+cut('/* ---------- leitor ---------- */\nconst cvs=','})();\n</script>\n</body>',open('src/leitor_gl.js',encoding='utf-8').read()+open('src/filtro.js',encoding='utf-8').read()+open('src/marcar.js',encoding='utf-8').read()+open('src/avatares.js',encoding='utf-8').read()+open('src/chat.js',encoding='utf-8').read()+open('src/saudacoes.js',encoding='utf-8').read()+open('src/perfil.js',encoding='utf-8').read()+'\nrenderRecent();\n')
 
 # ---- v0.18: nucleo de deteccao hqcore12 (ordem por relacao + limpeza de passos) + plano v10 ----
 import re as _re,base64 as _b64
@@ -48,7 +48,7 @@ _m=_re.search(r'(<script id="hqcore" type="text/plain"[^>]*>)(.*?)(</script>)',s
 assert _m,'hqcore'
 src=src[:_m.start(2)]+_core+src[_m.end(2):]
 assert "const VERSAO_PLANO='v9';" in src
-src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v11';")
+src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v13';")
 
 # ---- v0.20: idioma PT/EN, perfil, saudacao, nome ComicXD ----
 import sys as _sys,json as _json
@@ -60,6 +60,10 @@ for _lg in _jk:
 _i18n='const VERSAO='+_json.dumps(open('src/VERSAO.txt').read().strip())+';\nconst __JA='+_json.dumps(_jk['ja'],ensure_ascii=False)+';const __KO='+_json.dumps(_jk['ko'],ensure_ascii=False)+';\n'+open('src/i18n.js',encoding='utf-8').read()
 assert src.count("const ZOOMS=[1.1,1.25")==1
 src=src.replace("const ZOOMS=[1.1,1.25",_i18n+"\nconst ZOOMS=[1.1,1.25",1)
+# padrao da leitura guiada: Letra 5 (zoom 1.8). Quem ja escolheu outro tamanho mantem o que escolheu.
+_z0="let ZOOM=store.get('hq-zoom',1.4);if(!ZOOMS.includes(ZOOM))ZOOM=1.4;"
+assert src.count(_z0)==1,'zoom padrao'
+src=src.replace(_z0,"let ZOOM=store.get('hq-zoom',1.8);if(!ZOOMS.includes(ZOOM))ZOOM=1.8;",1)
 def _r(o,n):
     global src
     assert src.count(o)==1,(src.count(o),o[:70]); src=src.replace(o,n)

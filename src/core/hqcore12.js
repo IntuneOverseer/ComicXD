@@ -397,6 +397,7 @@
     const sm = resize(img, 700, hh, cv.INTER_LINEAR), g = toGray(sm), G = g.data, S = sm.data, n = 700 * hh;
     const dark = new cv.Mat(hh, 700, cv.CV_8UC1), DK = dark.data;
     for (let i = 0; i < n; i++) DK[i] = G[i] < 28 ? 1 : 0;
+    const DKd = Uint8Array.from(DK);   // so o escuro de verdade (sem o fundo da pagina), para a segunda leitura do contorno
     const b = 6, ring = [];
     const push = (x, y) => { const p = (y * 700 + x) * 3; ring.push([S[p], S[p + 1], S[p + 2]]); };
     for (let y = 0; y < b; y++) for (let x = 0; x < 700; x++) push(x, y);
@@ -409,11 +410,28 @@
     let best = -1, bk = 0; for (const [k, v] of cnt) if (v > best || (v === best && k < bk)) { best = v; bk = k; }
     const bgc = [0, 0, 0]; let nb = 0; for (const p of ring) if (keyOf(p) === bk) { bgc[0] += p[0]; bgc[1] += p[1]; bgc[2] += p[2]; nb++; }
     bgc[0] /= nb; bgc[1] /= nb; bgc[2] /= nb;
+    const fundoClaro = (bgc[0] + bgc[1] + bgc[2]) / 3 > 150;
     let bsum = 0; const bgm = new Uint8Array(n);
     for (let i = 0; i < n; i++) { const p = i * 3; const d = Math.max(Math.abs(S[p] - bgc[0]), Math.abs(S[p + 1] - bgc[1]), Math.abs(S[p + 2] - bgc[2])); if (d < 28) { bgm[i] = 1; bsum++; } }
     if (bsum / n < 0.5) for (let i = 0; i < n; i++) if (bgm[i]) DK[i] = 1;
     sm.delete(); g.delete();
-    const hk = morph(dark, cv.MORPH_OPEN, 1, 60), vk = morph(dark, cv.MORPH_OPEN, 60, 1); dark.delete();
+    const hk = morph(dark, cv.MORPH_OPEN, 1, 60), vk = morph(dark, cv.MORPH_OPEN, 60, 1);
+    // v0.69: segunda leitura SO PARA O CONTORNO. Arte preta grossa (cabelo, sombra, folhagem) encostada na borda do quadro virava "calha"
+    // e o poligono cortava pedacos da imagem. Aqui as manchas pretas grossas (>= 24 px) saem da calha; o retangulo e a lista de quadros nao mudam.
+    let R2 = null;
+    if (fundoClaro) {
+      const dm = new cv.Mat(hh, 700, cv.CV_8UC1); dm.data.set(DKd);
+      const fat0 = morph(dm, cv.MORPH_OPEN, 24, 24), fat = dilate(fat0, 3, 3); dm.delete(); fat0.delete();
+      const D2 = new cv.Mat(hh, 700, cv.CV_8UC1), D2d = D2.data, FT = fat.data, D1 = dark.data;
+      for (let i = 0; i < n; i++) D2d[i] = FT[i] ? 0 : D1[i];
+      fat.delete();
+      const hk2 = morph(D2, cv.MORPH_OPEN, 1, 60), vk2 = morph(D2, cv.MORPH_OPEN, 60, 1); D2.delete();
+      const or2 = new cv.Mat(); cv.bitwise_or(hk2, vk2, or2); hk2.delete(); vk2.delete();
+      const gut2 = dilate(or2, 5, 5); or2.delete();
+      const inv2 = new cv.Mat(hh, 700, cv.CV_8UC1); { const I2 = inv2.data, U2 = gut2.data; for (let i = 0; i < n; i++) I2[i] = 1 - U2[i]; }
+      gut2.delete(); R2 = cc(inv2, 4); inv2.delete();
+    }
+    dark.delete();
     const orr = new cv.Mat(); cv.bitwise_or(hk, vk, orr); hk.delete(); vk.delete();
     const gut = dilate(orr, 5, 5); orr.delete();
     const inv = new cv.Mat(hh, 700, cv.CV_8UC1); { const I = inv.data, U = gut.data; for (let i = 0; i < n; i++) I[i] = 1 - U[i]; }
@@ -425,13 +443,35 @@
         const x = R.stats[i * 5], y = R.stats[i * 5 + 1], w = R.stats[i * 5 + 2], h = R.stats[i * 5 + 3], a = R.stats[i * 5 + 4];
         // arte de fundo EM VOLTA dos quadros (quadros com borda sobre arte, sem calha): ocupa a pagina toda mas e oca
         if (w > 0.9 * 700 && h > 0.9 * hh && a < 0.7 * w * h) continue;
-        if (w > 0.12 * 700 && h > 0.05 * hh && a > 0.02 * hh * 700) ps.push(withPoly([x / s, y / s, w / s, h / s], compPoly(R.labels, i, x, y, w, h, 700, hh, s)));
+        if (w > 0.12 * 700 && h > 0.05 * hh && a > 0.02 * hh * 700) {
+          let P = compPoly(R.labels, i, x, y, w, h, 700, hh, s);
+          if (R2) P = polyMenosCorte(R, R2, i, x, y, w, h, a, P, hh, s);
+          ps.push(withPoly([x / s, y / s, w / s, h / s], P));
+        }
       }
-    } finally { R.labels.delete(); }
+    } finally { R.labels.delete(); if (R2) R2.labels.delete(); }
     if (ps.length < 2) return [];
     const area = ps.reduce((t, p) => t + p[2] * p[3], 0);
     if (area > 1.15 * W * H || Math.max(...ps.map(p => p[2] * p[3])) > 0.9 * W * H) return [];
     return orderRows(ps, { ge: true, sortRows: true, f: q => q[0] });
+  }
+
+  // v0.69: troca o poligono por um que corta MENOS arte, so quando a segunda leitura (sem manchas pretas grossas) concorda com a primeira:
+  // mesmo quadro (>= 90% de sobreposicao), sem crescer mais de 8% em largura/altura nem 20% em area, e poligono novo com 0 a 20% mais area.
+  function polyMenosCorte(R, R2, i, x, y, w, h, a, Pold, hh, s) {
+    if (!Pold) return Pold;   // so troca poligono que ja existia (nunca cria um novo corte)
+    try {
+      const L1 = R.labels.data32S, L2 = R2.labels.data32S, cnt = new Map();
+      let tot = 0;
+      for (let yy = 0; yy < h; yy++) { const o = (y + yy) * 700 + x; for (let xx = 0; xx < w; xx++) if (L1[o + xx] === i) { const l = L2[o + xx]; if (l > 0) cnt.set(l, (cnt.get(l) || 0) + 1); tot++; } }
+      let j = -1, best = 0; for (const [l, c] of cnt) if (c > best) { best = c; j = l; }
+      if (j < 1 || best < 0.9 * a) return Pold;
+      const x2 = R2.stats[j * 5], y2 = R2.stats[j * 5 + 1], w2 = R2.stats[j * 5 + 2], h2 = R2.stats[j * 5 + 3], a2 = R2.stats[j * 5 + 4];
+      if (w2 > 1.08 * w || h2 > 1.08 * h || a2 > 1.2 * a) return Pold;
+      const Pnew = compPoly(R2.labels, j, x2, y2, w2, h2, 700, hh, s);
+      const ao = Pold ? Math.abs(polyArea(Pold)) : (w / s) * (h / s), an = Pnew ? Math.abs(polyArea(Pnew)) : (w2 / s) * (h2 / s);
+      return (an >= ao && an <= 1.2 * ao) ? Pnew : Pold;
+    } catch (e) { return Pold; }
   }
 
   // contorno do componente i (rotulos CV_32S) -> poligono simplificado na escala original, ou null se for retangulo
@@ -776,7 +816,7 @@
       let near = 0; for (let v = 0; v < 256; v++) if (Math.abs(v - med) < 14) near += hist[v];
       return std < 6.0 || near / n > 0.88;
     }
-    const PR = [], SRC = [], PP = []; let steps = [];
+    const PR = [], SRC = [], PP = [], ROWS = {}; let steps = [];
     const visOf = s => clip(s[6] || windowAt(s[0], s[1], s[2], W, H), PR[s[4]]);
     for (const [idxs, r] of units) {
       const bs = [].concat(...idxs.map(i => own[i]));
@@ -796,7 +836,7 @@
       const cols = r[2] <= ww * 1.02 ? 1 : Math.ceil((r[2] - 0.05 * ww) / (0.9 * ww));
       const nrow = r[3] <= wh * 1.02 ? 1 : Math.ceil((r[3] - 0.05 * wh) / (0.9 * wh));
       const centers = (lo, len, win, n) => { if (n === 1) return [lo + len / 2]; const a = lo + win / 2, b = lo + len - win / 2; const o = []; for (let k = 0; k < n; k++) o.push(a + (b - a) * k / (n - 1)); return o; };
-      let xs = centers(r[0], r[2], ww, cols); const ys = centers(r[1], r[3], wh, nrow);
+      let xs = centers(r[0], r[2], ww, cols); const ys = centers(r[1], r[3], wh, nrow); ROWS[pi] = ys;
       if (rtl) xs = xs.reverse();
       const tiles = [], off = linspace(-0.2, 0.2, 9);
       for (const cy of ys) for (const cx of xs) {
@@ -823,6 +863,40 @@
         for (let yy = Math.max(0, y0); yy < Math.min(CH, y1); yy++) cov.fill(1, yy * CW + Math.max(0, x0), yy * CW + Math.min(CW, x1));
         for (const b of g) seen.add(b);
         steps.push([x_, y_, zz, 'quadro-percurso', pi, g.length ? g.slice().sort((p, q) => p[1] - q[1] || p[0] - q[0]) : null, win]);
+      }
+      // GARANTIA DE COBERTURA: descartar passo "sem arte nova" e deslocar passo para nao cortar balao podem deixar uma faixa do quadro
+      // fora de TODOS os passos. Aqui confere o que sobrou e cobre so arte (nunca fundo liso, nunca o que esta fora do contorno).
+      for (let rep = 0; rep < 4; rep++) {
+        const gx0 = Math.max(0, trunc(r[0] * S)), gy0 = Math.max(0, trunc(r[1] * S)), gx1 = Math.min(CW, trunc((r[0] + r[2]) * S)), gy1 = Math.min(CH, trunc((r[1] + r[3]) * S));
+        if (gx1 <= gx0 || gy1 <= gy0) break;
+        const gw = gx1 - gx0, gh = gy1 - gy0, PL = PP[pi];
+        const dentro = PL ? (px, py) => { let c = false; for (let a = 0, b = PL.length - 1; a < PL.length; b = a++) { const [xa, ya] = PL[a], [xb, yb] = PL[b]; if ((ya > py) !== (yb > py) && px < (xb - xa) * (py - ya) / (yb - ya) + xa) c = !c; } return c; } : null;
+        const I = new Uint32Array((gw + 1) * (gh + 1)); let nT = 0, nU = 0;     // imagem integral das celulas ainda NAO cobertas
+        for (let yy = 0; yy < gh; yy++) { let lin = 0; for (let xx = 0; xx < gw; xx++) {
+          if (!dentro || dentro((gx0 + xx + 0.5) / S, (gy0 + yy + 0.5) / S)) { nT++; if (!cov[(gy0 + yy) * CW + gx0 + xx]) { lin++; nU++; } }
+          I[(yy + 1) * (gw + 1) + xx + 1] = I[yy * (gw + 1) + xx + 1] + lin; } }
+        if (!nT || nU / nT < 0.06) break;                 // menos de 6% do quadro fora de qualquer passo: fresta, nao compensa
+        const soma = (a0, a1, b0, b1) => { a0 = Math.max(0, a0); b0 = Math.max(0, b0); a1 = Math.min(gw, a1); b1 = Math.min(gh, b1); if (a1 <= a0 || b1 <= b0) return 0; return I[b1 * (gw + 1) + a1] - I[b0 * (gw + 1) + a1] - I[b1 * (gw + 1) + a0] + I[b0 * (gw + 1) + a0]; };
+        const pos = (lo, len, win) => { if (len <= win) return [lo + len / 2]; const a = lo + win / 2, b = lo + len - win / 2, o = []; for (let k = 0; k < 9; k++) o.push(a + (b - a) * k / 8); return o; };
+        let best = null;
+        for (const cy of pos(r[1], r[3], wh)) for (const cx of pos(r[0], r[2], ww)) {
+          const win = windowAt(cx, cy, zz, W, H), v = clip(win, r);
+          const n = soma(trunc(v[0] * S) - gx0, trunc((v[0] + v[2]) * S) - gx0, trunc(v[1] * S) - gy0, trunc((v[1] + v[3]) * S) - gy0);
+          if (!best || n > best[0]) best = [n, cx, cy, win, v];
+        }
+        const [nB, x_, y_, win, v] = best, vx0 = trunc(v[0] * S), vx1 = trunc((v[0] + v[2]) * S), vy0 = trunc(v[1] * S), vy1 = trunc((v[1] + v[3]) * S);
+        if (nB / nT < 0.03) break;                       // o que sobra e fresta: nao compensa um passo a mais
+        const fill = () => { for (let yy = Math.max(0, vy0); yy < Math.min(CH, vy1); yy++) cov.fill(1, yy * CW + Math.max(0, vx0), yy * CW + Math.min(CW, vx1)); };
+        let ux0 = 1e9, uy0 = 1e9, ux1 = -1, uy1 = -1;    // caixa da arte nova que esse passo mostraria
+        for (let yy = Math.max(gy0, vy0); yy < Math.min(gy1, vy1); yy++) for (let xx = Math.max(gx0, vx0); xx < Math.min(gx1, vx1); xx++) {
+          if (cov[yy * CW + xx] || (dentro && !dentro((xx + 0.5) / S, (yy + 0.5) / S))) continue;
+          if (xx < ux0) ux0 = xx; if (xx > ux1) ux1 = xx; if (yy < uy0) uy0 = yy; if (yy > uy1) uy1 = yy; }
+        if (ux1 < 0) break;
+        if (blank([ux0 / S, uy0 / S, (ux1 - ux0 + 1) / S, (uy1 - uy0 + 1) / S])) { fill(); continue; }   // so fundo liso: nada a mostrar
+        const g = bs.filter(b => inter(v, b) >= 0.999 * b[2] * b[3]);
+        steps.push([x_, y_, zz, 'quadro-percurso', pi, g.length ? g.slice().sort((p, q) => p[1] - q[1] || p[0] - q[0]) : null, win]);
+        for (const b of g) seen.add(b);
+        fill();
       }
       let mine = steps.filter(s => s[4] === pi);
       for (const b of bs) {
@@ -869,7 +943,12 @@
     }
     // ORDEM DE LEITURA (trilha): quadro a quadro; dentro do quadro, faixa por faixa de cima para baixo, esquerda->direita
     const band = (W / ZT) / ASP * 0.5;
-    const okey = s => { const u = SRC[s[4]], top = PR[u][1]; return [u, Math.floor(Math.max(0, s[1] - top) / band), rtl ? -s[0] : s[0]]; };
+    // linha do passo dentro do quadro: a linha da grade de passos (ys) mais proxima. Faixas fixas de meia janela juntavam duas linhas
+    // quando a grade tem linhas mais coladas que isso (zoom alto / quadro pouco maior que a janela) e a leitura virava coluna por coluna.
+    const okey = s => { const u = SRC[s[4]], top = PR[u][1], ys = ROWS[u]; let row;
+      if (ys && ys.length > 1) { row = 0; let bd = Infinity; for (let k = 0; k < ys.length; k++) { const d = Math.abs(ys[k] - s[1]); if (d < bd) { bd = d; row = k; } } }
+      else row = Math.floor(Math.max(0, s[1] - top) / band);
+      return [u, row, rtl ? -s[0] : s[0]]; };
     steps = steps.map((s, i) => [okey(s), i, s]).sort((a, b) => cmpTuple(a[0], b[0]) || a[1] - b[1]).map(x => x[2]);
     return { steps, PR, PP };
   }
