@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.70.1 — Windows
+- O programa de Windows (portátil e instalador) agora traz o leitor da **0.70**: leitura do `ComicInfo.xml` dos CBZ/ZIP, **✎ Editar informações** no menu ⋯ do título e ordem **Série / número** na biblioteca. A janela, a tela cheia e o restante do programa são os mesmos da 0.69.1.
+- Para atualizar: rode o `Setup.exe` novo por cima (a biblioteca é mantida) ou, no portátil, troque o `.exe` e mantenha a pasta `ComicXD-dados`.
+- Android/APK e versão web já estão na 0.70.
+- EN: the Windows app (portable and installer) now ships the **0.70** reader: ComicInfo.xml reading for CBZ/ZIP, **✎ Edit info** in the title's ⋯ menu and the **Series / number** sort. Window, fullscreen and the rest are unchanged from 0.69.1. To update, run the new `Setup.exe` over the old one (library is kept) or replace the portable `.exe` and keep the `ComicXD-dados` folder.
+
 ## 0.70
 - Biblioteca: **informações do título**. Ao adicionar um CBZ/ZIP, o app lê o `ComicInfo.xml` (série, número, título, volume, autor, editora, ano, gênero e sinopse) e o cartão passa a mostrar "Série #número — Título". Sem metadados, continua mostrando o nome do arquivo.
 - Biblioteca: novo botão **✎ Editar informações** no menu ⋯ do título. As mudanças valem só dentro do app (o arquivo original não é alterado). Tem "Reler do arquivo (ComicInfo.xml)" e "Limpar campos".
