@@ -28,6 +28,7 @@
       <div><h3>Menu e tela cheia</h3><p><span class="so-toque">Toque no <b>centro</b> para mostrar as barras: biblioteca, páginas, guiada ou página inteira, <b>Aa</b> e <b>⛶</b> (tela cheia).</span><span class="so-web">As barras ficam sempre visíveis. <b>⛶ Tela cheia</b> (ou tecla <kbd>F</kbd>) deixa só a HQ; clique no centro para ver o menu e <kbd>Esc</kbd> para sair.</span></p></div>
       <div><h3>Zoom livre</h3><p><span class="so-toque"><b>Dois toques no centro</b> ou <b>pinça</b> dão zoom. Arraste para mover.</span><span class="so-web"><b>Ctrl + roda</b> (ou duplo clique) dá zoom; arraste ou use a roda para mover.</span> <span>Dois toques/cliques de novo voltam à página inteira.</span> <span>Funciona também no modo Vertical. No mangá, em Página inteira, a próxima página começa no canto onde a leitura começa (direita no modo Mangá, esquerda no Ocidental).</span></p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li>Tom da página agora só no mangá: as HQs ficam mais fluidas com os filtros de cores.</li>
         <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
         <li><b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.</li>
@@ -52,6 +53,7 @@
       <div><h3>Modos de leitura</h3><p>No menu, troque entre <b>Mangá</b> (direita para esquerda), <b>Ocidental</b>, <b>Vertical</b> e <b>Webtoon</b> (rolagem contínua). O app lembra o modo de cada obra.</p></div>
       <div><h3>Bordas e fundo</h3><p>O botão <b>✂ Cortar bordas</b> tira as margens da página. Em <b>Aa</b> você escolhe o fundo: preto, cinza ou branco.</p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li>Tom da página agora só no mangá: as HQs ficam mais fluidas com os filtros de cores.</li>
         <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
         <li><b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.</li>
@@ -167,8 +169,8 @@
     <div class="hq-only"><div class="letra"><button class="rbtn" id="zm" aria-label="Letra menor">A−</button><span id="letra-v">—</span><button class="rbtn" id="zp" aria-label="Letra maior">A+</button></div>
     <small>Tamanho da letra = quão perto a câmera chega dos quadros. Mudar refaz a preparação da HQ (uma vez).</small></div>
     <label class="hq-only"><span>Cores da página</span><select id="cfg-pb"><option value="normal">Colorido (original)</option><option value="pb">Preto e branco</option><option value="forte">Preto e branco forte (contornos marcados)</option><option value="verm">Preto, branco e sangue</option></select><small>Só na aba HQ.</small></label>
-    <label><span>Tom da página</span><select id="cfg-tom"><option value="normal">Normal</option><option value="amarelo">Amarelo</option><option value="sepia">Sépia</option><option value="ambar">Âmbar (leitura à noite)</option><option value="azul">Azul</option><option value="verde">Verde</option><option value="rosa">Rosa</option></select></label>
-    <label><span>Intensidade do tom</span><input id="cfg-tom-i" type="range" min="0.15" max="0.9" step="0.05"></label>
+    <label class="mg-only"><span>Tom da página</span><select id="cfg-tom"><option value="normal">Normal</option><option value="amarelo">Amarelo</option><option value="sepia">Sépia</option><option value="ambar">Âmbar (leitura à noite)</option><option value="azul">Azul</option><option value="verde">Verde</option><option value="rosa">Rosa</option></select></label>
+    <label class="mg-only"><span>Intensidade do tom</span><input id="cfg-tom-i" type="range" min="0.15" max="0.9" step="0.05"></label>
     <label class="ck"><input type="checkbox" id="cfg-anim"><span><span>Animar transições</span><small style="display:block">Desligado = corte seco, sem animação: máxima fluidez em tablet fraco.</small></span></label>
     <label><span><span>Velocidade da transição:</span> <span id="cfg-vel-v"></span></span>
       <input id="cfg-vel" type="range" min="0.2" max="1.2" step="0.1"><small>Menor = mais rápido. Padrão: 0,6 s.</small></label>

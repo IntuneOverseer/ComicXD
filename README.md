@@ -14,7 +14,7 @@ Leitor gratuito e open source de **HQ, mangá e webtoon**. Um único arquivo HTM
 
 ## Instalar
 - **Abrir online (sem instalar):** https://intuneoverseer.github.io/ComicXD/ — funciona no navegador do PC; seus arquivos ficam no seu aparelho.
-- **Últimas versões:** página de [Releases](https://github.com/IntuneOverseer/ComicXD/releases): Android e HTML na `v0.70`; programa de Windows (portátil e instalador) na `v0.70.1`.
+- **Últimas versões:** página de [Releases](https://github.com/IntuneOverseer/ComicXD/releases): Android e HTML na `v0.71`; programa de Windows (portátil e instalador) na `v0.71.1`.
 - **Android:** baixe o APK em [Releases](../../releases), habilite "instalar apps desconhecidos" para o navegador/gerenciador de arquivos e abra o arquivo. O Play Protect pode avisar por ser um app novo fora da loja.
 - **PC:** baixe `dist/ComicXD-pc.html` e abra no navegador.
 - **Windows (programa):** baixe o `portable.exe` (sem instalar) ou o `Setup.exe` (instala só para o seu usuário, sem administrador) em [Releases](../../releases). O Windows pode mostrar o aviso do SmartScreen por o programa não ser assinado: não é vírus, veja [`docs/WINDOWS.md`](docs/WINDOWS.md).

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.71.1 — Windows
+- O programa de Windows (portátil e instalador) agora traz o leitor da **0.71** (tom da página só no mangá e botões do editor de informações sem texto cortado). A janela, a tela cheia e o restante do programa são os mesmos da 0.69.1.
+- Para atualizar: rode o `Setup.exe` novo por cima (a biblioteca é mantida) ou, no portátil, troque o `.exe` e mantenha a pasta `ComicXD-dados`.
+- EN: the Windows app (portable and installer) now ships the **0.71** reader (page tint is manga-only; the title-info editor buttons no longer clip their text). Window, fullscreen and the rest are unchanged from 0.69.1. To update, run the new `Setup.exe` over the old one (library is kept) or replace the portable `.exe` and keep the `ComicXD-dados` folder.
+
+## 0.71
+- Leitor: o **Tom da página** (amarelo, sépia, azul…) agora existe **só no mangá**. Nas HQs o controle sumiu de Aa e a camada de tom foi desligada, o que deixa a leitura mais fluida quando se usa os filtros de cores (por exemplo "Preto, branco e sangue"). Os filtros de cores das HQs não mudaram.
+- Biblioteca: no editor de informações do título, os botões agora quebram linha em celular e tablet em vez de cortar o texto ("Reler do arquivo (ComicInfo.xml)" virou "Reler do arquivo").
+- Sem mudança no motor de leitura nem nos filtros de cor. O app do Windows sai na 0.71.1.
+- EN: **Page tint** (yellow, sepia, blue…) is now **manga-only**. In comics the control is gone from Aa and the tint layer is switched off, so reading stays smoother when using the color filters (e.g. "Black, white & blood"). The comic color filters are unchanged. Library: the buttons of the title-info editor now wrap their text on phones and tablets instead of clipping it ("Re-read from file (ComicInfo.xml)" is now "Re-read from file"). No change to the reading engine. The Windows app ships as 0.71.1.
+
 ## 0.70.1 — Windows
 - O programa de Windows (portátil e instalador) agora traz o leitor da **0.70**: leitura do `ComicInfo.xml` dos CBZ/ZIP, **✎ Editar informações** no menu ⋯ do título e ordem **Série / número** na biblioteca. A janela, a tela cheia e o restante do programa são os mesmos da 0.69.1.
 - Para atualizar: rode o `Setup.exe` novo por cima (a biblioteca é mantida) ou, no portátil, troque o `.exe` e mantenha a pasta `ComicXD-dados`.

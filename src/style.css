@@ -613,3 +613,8 @@ html[data-modo=web] .how .nov ul{font-size:13.5px}
 .sheet .mf{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dim)}
 .sheet .mf input,.sheet .mf textarea{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:var(--k2);color:#fff;border:1px solid var(--line);font:600 16px var(--ui);resize:vertical}
 .sheet .mf textarea{min-height:90px}
+
+/* v0.71: tom da pagina so no manga (a camada nem existe na HQ); botoes das folhas (editor) quebram linha em tela estreita */
+html:not([data-leitura=manga]) #tom{display:none!important}
+html:not([data-leitura=manga]) label.mg-only{display:none!important}
+.sheet .dc .btn{white-space:normal;line-height:1.2;text-align:center;padding:12px 18px;min-height:52px;overflow-wrap:anywhere}

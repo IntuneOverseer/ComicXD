@@ -43,7 +43,7 @@ function bibEditar(it){const m=$('bib-menu'),c=$('bib-menu-c');m.hidden=false;c.
   const bt=(txt,fn,cls)=>{const b=document.createElement('button');b.type='button';b.className='btn'+(cls?' '+cls:'');b.textContent=txt;b.onclick=fn;c.append(b);return b};
   const ler=()=>{const o={};for(const k in campos)o[k]=campos[k].value;return o};
   bt(L('Salvar','Save'),async()=>{const mt=metaNormal(ler(),'manual'),n=Object.assign({},it);if(mt)n.meta=mt;else delete n.meta;await idxPut(n);m.hidden=true;await bibRender()});
-  bt(L('Reler do arquivo (ComicInfo.xml)','Re-read from file (ComicInfo.xml)'),async()=>{
+  bt(L('Reler do arquivo','Re-read from file'),async()=>{
     try{const v=await libGet(it.key),f=v&&v.files&&v.files.length===1?v.files[0]:null;
       if(!f||!/\.(cbz|zip)$/i.test(f.name)){aviso(L('A leitura automática funciona só em CBZ/ZIP. Preencha à mão.','Automatic reading works only for CBZ/ZIP. Fill it in by hand.'));return}
       const mt=await metaDeZip(await JSZip.loadAsync(f.blob));
