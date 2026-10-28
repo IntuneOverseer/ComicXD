@@ -14,6 +14,13 @@ RSRC="${RSRC:-$(command -v rsrc || echo "$(go env GOPATH)/bin/rsrc")}"
 export CGO_ENABLED=0
 
 echo "== leitor embutido: $HTML"; cp "$HTML" index.html
+# TRAVA: o leitor (.html) embutido tem que ser da versão do leitor que este Windows declara (0.71.1 -> leitor 0.71)
+HV="$(grep -o 'const VERSAO="[^"]*"' index.html | head -1 | cut -d'"' -f2)"
+VN="${VERSAO%%-*}"; VL="$(echo "$VN" | cut -d. -f1,2)"
+if [ "$HV" != "$VL" ] && [ -z "${PULAR_TRAVA_HTML:-}" ]; then
+  echo "ERRO: o .html embutido é da versão '$HV', mas este Windows ($VERSAO) exige leitor '$VL'. Use o ComicXD-pc.html certo."; exit 1
+fi
+echo "   leitor $HV confere com o Windows $VERSAO"
 echo "== testes da lógica";        GOOS="$(go env GOHOSTOS)" go test ./... 2>&1 | grep -v "no test files" | tail -3
 echo "== vet (Windows)";           GOOS=windows GOARCH=amd64 go vet ./... 2>&1 | grep -v -E "possible misuse of unsafe.Pointer|^#" || true
 

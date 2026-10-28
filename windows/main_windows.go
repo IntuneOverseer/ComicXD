@@ -416,14 +416,16 @@ const scriptShell = `(function(){
 func init() { runtime.LockOSThread() } // a janela precisa viver numa única thread
 
 func main() {
-	var pastaDadosFlag, finalDesinst string
-	var desinst, depurar bool
+	var pastaDadosFlag, finalDesinst, feedTeste string
+	var desinst, depurar, semAtualizar bool
 	fs := flag.NewFlagSet("ComicXD", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&pastaDadosFlag, "dados", "", "pasta de dados (padrão: automática)")
 	fs.BoolVar(&desinst, "desinstalar", false, "desinstalar (só instalação feita pelo instalador)")
 	fs.StringVar(&finalDesinst, "desinstalar-final", "", "uso interno do desinstalador")
 	fs.BoolVar(&depurar, "depurar", false, "liga as ferramentas de desenvolvedor (F12 / clique direito > Inspecionar)")
+	fs.BoolVar(&semAtualizar, "sem-atualizar", false, "não procura versões novas")
+	fs.StringVar(&feedTeste, "feed", "", "uso em testes: arquivo JSON local no lugar do GitHub")
 	_ = fs.Parse(os.Args[1:]) // argumento desconhecido (ex.: caminho de arquivo) é ignorado por enquanto
 
 	exe, err := os.Executable()
@@ -463,6 +465,8 @@ func main() {
 		}
 	}()
 
+	// registrado ANTES de "liberar": roda depois dele (defers são LIFO), já com a instância única liberada
+	defer reabrirSeAtualizado(argsSemFeed(os.Args[1:]))
 	liberar, outra := jaAberto(dados)
 	defer liberar()
 	if outra {
@@ -559,6 +563,7 @@ func main() {
 
 	parar := make(chan struct{})
 	go a.vigiarJanela(parar)
+	iniciarAtualizacao(w, opcoesAtualizacao{dados: dados, exe: exe, pastaExe: pastaExe, feed: feedTeste, desligado: semAtualizar, argsReabrir: os.Args[1:]})
 
 	w.Navigate(urlInicial)
 	w.Run()
@@ -596,4 +601,21 @@ func colocarIcone(hwnd uintptr) {
 	if pequeno != 0 {
 		_, _, _ = pSendMessage.Call(hwnd, wmSetIcon, 0, pequeno)
 	}
+}
+
+// argsSemFeed repassa os argumentos ao reabrir, menos o --feed (só de teste).
+func argsSemFeed(args []string) []string {
+	var r []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--feed" || a == "-feed" {
+			i++
+			continue
+		}
+		if strings.HasPrefix(a, "--feed=") || strings.HasPrefix(a, "-feed=") {
+			continue
+		}
+		r = append(r, a)
+	}
+	return r
 }
