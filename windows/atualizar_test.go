@@ -228,11 +228,11 @@ func TestFrequencia(t *testing.T) {
 		t.Fatal("sem arquivo => consulta")
 	}
 	marcarConsulta(arq, agora)
-	if deveConsultar(arq, agora.Add(time.Hour)) {
-		t.Fatal("1h depois não consulta")
+	if deveConsultar(arq, agora.Add(30*time.Second)) {
+		t.Fatal("30s depois não consulta")
 	}
-	if !deveConsultar(arq, agora.Add(7*time.Hour)) {
-		t.Fatal("7h depois consulta")
+	if !deveConsultar(arq, agora.Add(3*time.Minute)) {
+		t.Fatal("3min depois consulta")
 	}
 	if !deveConsultar(arq, agora.Add(-time.Hour)) {
 		t.Fatal("relógio voltou => consulta")

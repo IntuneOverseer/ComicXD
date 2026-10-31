@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -25,12 +26,32 @@ import (
 const (
 	arqUltimaConsulta = "ultima-consulta-atualizacao.txt"
 	arqSemAtualizar   = "sem-atualizar.txt"
+	arqUltimaOferta   = "ultima-oferta-atualizacao.txt" // versão cuja janela de pergunta já foi mostrada
 	paginaReleases    = "https://github.com/IntuneOverseer/ComicXD/releases"
 )
 
 // reiniciarExe é preenchido quando uma atualização foi aplicada: depois que a
 // janela fechar e o "mutex" de instância única for liberado, main() reabre o app.
 var reiniciarExe atomic.Value // string
+
+// Atualização encontrada e ainda não aplicada: o leitor mostra o botão fixo no topo enquanto houver.
+var (
+	pendMu    sync.Mutex
+	pendUpd   *Atualizacao
+	pendBusca fonteFn
+	pendOpts  opcoesAtualizacao
+	pendWV    webview2.WebView
+	aplicando atomic.Bool
+)
+
+func versaoPendente() string {
+	pendMu.Lock()
+	defer pendMu.Unlock()
+	if pendUpd == nil {
+		return ""
+	}
+	return pendUpd.Versao
+}
 
 type opcoesAtualizacao struct {
 	dados, exe, pastaExe string
@@ -48,6 +69,19 @@ func (o opcoesAtualizacao) instaladoNoPadrao() bool {
 
 // iniciarAtualizacao roda em segundo plano: nunca trava nem derruba o app.
 func iniciarAtualizacao(w webview2.WebView, o opcoesAtualizacao) {
+	// O leitor pergunta "há versão nova?" e, ao clicar no botão, pede para atualizar agora.
+	// (os dois voltam na hora: o que demora roda em outra goroutine)
+	_ = w.Bind("comicxdAtualizacao", func() string { return versaoPendente() })
+	_ = w.Bind("comicxdAtualizarAgora", func() {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("atualizador: erro inesperado no botão: %v", r)
+				}
+			}()
+			ofertarEAplicar()
+		}()
+	})
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -65,6 +99,11 @@ func iniciarAtualizacao(w webview2.WebView, o opcoesAtualizacao) {
 		}
 		time.Sleep(6 * time.Second) // deixa a janela abrir primeiro
 		rodarAtualizacao(w, o)
+		// app deixado aberto por horas: confere de novo de tempos em tempos (a pergunta só volta se for versão nova)
+		for {
+			time.Sleep(30 * time.Minute)
+			rodarAtualizacao(w, o)
+		}
 	}()
 }
 
@@ -104,6 +143,36 @@ func rodarAtualizacao(w webview2.WebView, o opcoesAtualizacao) {
 		return
 	}
 	log.Printf("atualizador: encontrada %s (atual %s)", u.Versao, versaoApp)
+
+	pendMu.Lock()
+	pendUpd, pendBusca, pendOpts, pendWV = u, busca, o, w
+	pendMu.Unlock()
+
+	// A pergunta aparece sozinha uma vez por versão; depois disso o botão no topo do leitor continua
+	// lá até você atualizar (ou clicar nele para ser perguntado de novo).
+	arqOf := filepath.Join(o.dados, arqUltimaOferta)
+	if b, err := os.ReadFile(arqOf); err == nil && strings.TrimSpace(string(b)) == u.Versao {
+		log.Printf("atualizador: %s já foi oferecida; botão fica visível no leitor", u.Versao)
+		return
+	}
+	_ = os.WriteFile(arqOf, []byte(u.Versao), 0o644)
+	ofertarEAplicar()
+}
+
+// ofertarEAplicar pergunta, baixa, confere o SHA-256, troca o programa e pede para reabrir.
+// Pode ser chamada pela pergunta automática ou pelo botão do leitor; só roda uma por vez.
+func ofertarEAplicar() {
+	pendMu.Lock()
+	u, busca, o, w := pendUpd, pendBusca, pendOpts, pendWV
+	pendMu.Unlock()
+	if u == nil {
+		return
+	}
+	if !aplicando.CompareAndSwap(false, true) {
+		log.Printf("atualizador: já há uma atualização em andamento")
+		return
+	}
+	defer aplicando.Store(false)
 
 	como := "Ele será baixado, conferido e instalado por cima desta pasta."
 	if o.instaladoNoPadrao() {

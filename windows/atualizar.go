@@ -31,7 +31,7 @@ const (
 	prefixoDownload = "/IntuneOverseer/ComicXD/releases/download/"
 	limiteExe       = 80 << 20 // 80 MB: acima disso o download é recusado
 	limiteHash      = 64 << 10
-	intervaloCheque = 6 * time.Hour
+	intervaloCheque = 2 * time.Minute // só evita consultas repetidas em reaberturas seguidas; a cada abertura normal consulta
 )
 
 type ativoRelease struct {
