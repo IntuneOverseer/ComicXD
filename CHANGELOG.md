@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.73.1 — Windows
+- **Botão "⬆ Nova versão"**: quando existe versão nova do programa de Windows, aparece um botão fixo no topo, à direita, da biblioteca (some enquanto você lê uma HQ). Ele fica até você atualizar; clicar nele pergunta, baixa, confere o SHA-256, fecha o programa antigo e reabre na versão nova.
+- O programa agora procura versão nova **toda vez que abre** (antes era no máximo a cada 6 horas, e por isso podia passar horas sem avisar) e confere de novo a cada 30 minutos se ficar aberto. A pergunta aparece sozinha **uma vez por versão**; depois o botão continua lá.
+- Traz o leitor da **0.73**. A janela, a tela cheia e o restante do programa são os mesmos da 0.72.1.
+- EN: **"⬆ New version" button**: when a newer Windows version exists, a fixed button appears at the top right of the library (hidden while you read a comic). It stays until you update; clicking it asks, downloads, verifies the SHA-256, closes the old program and reopens on the new version.
+- EN: the app now checks for a new version **every time it starts** (it used to wait up to 6 hours, so it could go hours without telling you) and checks again every 30 minutes while open. The question pops up by itself **once per version**; after that the button stays. Ships the **0.73** reader. Window, fullscreen and the rest are unchanged from 0.72.1.
+
+## 0.73
+- **.html baixado**: quem abre o arquivo `ComicXD-pc.html` direto do computador agora vê um botão fixo "⬆ Nova versão" no topo, à direita (acima do menu), quando sai versão nova. A janela de pergunta aparece sozinha uma vez por versão; o botão continua até você baixar o novo arquivo. O site e o programa de Windows não usam esse aviso do `.html` (o site já é sempre o mais novo; o Windows tem a própria atualização).
+- **Armazenamento**: o app apaga os planos de leitura guiada de versões antigas (que nunca mais seriam lidos) em segundo plano, 8 segundos depois de abrir. As miniaturas e os planos da versão atual ficam.
+- Android: versão 0.73 (versionCode 106), mesma assinatura da 0.72. O motor de leitura é o mesmo da 0.72.
+- EN: **Downloaded .html**: if you open `ComicXD-pc.html` straight from your computer you now see a fixed "⬆ New version" button at the top right (above the menu) when a new version is out. The question pops up by itself once per version; the button stays until you download the new file. The website and the Windows app do not use this .html notice. **Storage**: the app deletes guided-reading plans from old versions (never read again) in the background, 8 seconds after opening. Thumbnails and current-version plans are kept. Android: version 0.73 (versionCode 106), same signature as 0.72. The reading engine is the same as 0.72.
+
 ## 0.72.1 — Windows
 - O programa de Windows (portátil e instalador) agora traz o leitor da **0.72**: melhor detecção dos quadros na leitura guiada de **páginas duplas**. A janela, a tela cheia, a atualização automática e o restante do programa são os mesmos da 0.71.1.
 - Quem está na 0.71.1 recebe o aviso de atualização sozinho ao abrir o programa; os outros instalam esta uma vez à mão.

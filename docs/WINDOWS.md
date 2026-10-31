@@ -2,27 +2,27 @@
 
 **PT-BR** · [English below](#english)
 
-O ComicXD agora tem programa para Windows: o mesmo leitor do site e do APK, numa janela própria que você pode redimensionar, com tela cheia. Nada mudou dentro do leitor (é o da versão 0.72).
+O ComicXD agora tem programa para Windows: o mesmo leitor do site e do APK, numa janela própria que você pode redimensionar, com tela cheia. Nada mudou dentro do leitor (é o da versão 0.73).
 
 ## Requisitos
 - Windows 10 ou 11, 64 bits.
 - *Microsoft Edge WebView2 Runtime*: já vem no Windows 11 e no Windows 10 atualizado. Se faltar, o ComicXD avisa e oferece o download oficial da Microsoft.
 
 ## Qual baixar
-Na página de [Releases](../../../releases) (versão **0.72.1 — Windows**):
+Na página de [Releases](../../../releases) (versão **0.73.1 — Windows**):
 
 | Arquivo | Para quê |
 |---|---|
-| `ComicXD-0.72.1-Windows-portable.exe` | **Portátil**: um arquivo só, sem instalar. Biblioteca e progresso ficam na pasta `ComicXD-dados`, criada ao lado do `.exe` (dá para levar em pendrive). Se a pasta do `.exe` não aceitar gravação, usa `%LOCALAPPDATA%\ComicXD`. |
-| `ComicXD-0.72.1-Windows-Setup.exe` | **Instalador**: instala só para o seu usuário (**não pede administrador**) em `%LOCALAPPDATA%\Programs\ComicXD`, cria atalho no Menu Iniciar (e na Área de Trabalho, se você quiser) e aparece em *Configurações > Aplicativos instalados* para desinstalar. Dados em `%LOCALAPPDATA%\ComicXD`. |
+| `ComicXD-0.73.1-Windows-portable.exe` | **Portátil**: um arquivo só, sem instalar. Biblioteca e progresso ficam na pasta `ComicXD-dados`, criada ao lado do `.exe` (dá para levar em pendrive). Se a pasta do `.exe` não aceitar gravação, usa `%LOCALAPPDATA%\ComicXD`. |
+| `ComicXD-0.73.1-Windows-Setup.exe` | **Instalador**: instala só para o seu usuário (**não pede administrador**) em `%LOCALAPPDATA%\Programs\ComicXD`, cria atalho no Menu Iniciar (e na Área de Trabalho, se você quiser) e aparece em *Configurações > Aplicativos instalados* para desinstalar. Dados em `%LOCALAPPDATA%\ComicXD`. |
 | `SHA256.txt` | Impressões digitais dos arquivos, para você conferir o download. |
 | `AVISOS-DE-TERCEIROS.txt` | Licenças dos componentes que vão dentro do programa. |
 
 ## Como instalar
 **Portátil:** baixe o `portable.exe`, coloque numa pasta sua (ex.: `Documentos\ComicXD`) e dê dois cliques.
 
-**Instalador:** baixe o `Setup.exe`, dê dois cliques, responda as duas perguntas e pronto. Para instalar em silêncio: `ComicXD-0.72.1-Windows-Setup.exe /S` (atalho só no Menu Iniciar).
-**Atualização automática:** a partir da 0.71.1 o programa (portátil e instalado) procura versões novas ao abrir (no máximo a cada 6 horas), pergunta se você quer atualizar, baixa do GitHub do projeto, confere o SHA-256 e reabre sozinho, mantendo a biblioteca. No instalado, usa o instalador (`Setup.exe /S`) por cima; no portátil, troca o próprio `.exe`. Se a pasta do portátil não aceitar gravação, ele avisa e abre a página de downloads. Para desligar: `ComicXD.exe --sem-atualizar` ou um arquivo `sem-atualizar.txt` dentro da pasta de dados. Quem está numa versão anterior à 0.72.1 precisa instalar esta uma vez manualmente. Também dá para atualizar à mão, rodando o `Setup.exe` novo por cima.
+**Instalador:** baixe o `Setup.exe`, dê dois cliques, responda as duas perguntas e pronto. Para instalar em silêncio: `ComicXD-0.73.1-Windows-Setup.exe /S` (atalho só no Menu Iniciar).
+**Atualização automática:** a partir da 0.71.1 o programa (portátil e instalado) procura versões novas **toda vez que abre** (e a cada 30 minutos se ficar aberto), pergunta uma vez por versão se você quer atualizar, mostra um botão **⬆ Nova versão** no topo, à direita, enquanto houver versão nova, baixa do GitHub do projeto, confere o SHA-256 e reabre sozinho, mantendo a biblioteca. No instalado, usa o instalador (`Setup.exe /S`) por cima; no portátil, troca o próprio `.exe`. Se a pasta do portátil não aceitar gravação, ele avisa e abre a página de downloads. Para desligar: `ComicXD.exe --sem-atualizar` ou um arquivo `sem-atualizar.txt` dentro da pasta de dados. Quem está numa versão anterior à 0.73.1 precisa instalar esta uma vez manualmente. Também dá para atualizar à mão, rodando o `Setup.exe` novo por cima.
 Para desinstalar: *Configurações > Aplicativos > Aplicativos instalados > ComicXD > Desinstalar*. O desinstalador pergunta se você também quer apagar a biblioteca e o progresso (o padrão é **manter**).
 
 ## Atalhos de teclado
@@ -46,7 +46,7 @@ Dica: se preferir, antes de abrir clique com o botão direito no arquivo baixado
 - Baixe somente da página oficial de [Releases](../../../releases) deste repositório.
 - Confira a impressão digital. No PowerShell, na pasta do download:
   ```powershell
-  Get-FileHash .\ComicXD-0.72.1-Windows-Setup.exe -Algorithm SHA256
+  Get-FileHash .\ComicXD-0.73.1-Windows-Setup.exe -Algorithm SHA256
   ```
   O valor deve ser igual ao do `SHA256.txt` da Release.
 - O código-fonte está nesta pasta (`windows/`) e o build é reproduzível: quem compilar com o `build.sh` obtém os mesmos arquivos.
@@ -80,13 +80,13 @@ Veja [`windows/README.md`](../windows/README.md).
 
 ## English
 
-ComicXD now has a **Windows app**: the same reader as the website and the APK, in its own resizable window with fullscreen. Nothing changed inside the reader (it is version 0.72).
+ComicXD now has a **Windows app**: the same reader as the website and the APK, in its own resizable window with fullscreen. Nothing changed inside the reader (it is version 0.73).
 
 **Requirements:** Windows 10/11 x64 and the *Microsoft Edge WebView2 Runtime* (built into Windows 11 and up-to-date Windows 10; the app offers the official download if it is missing).
 
-**Which one:** on the [Releases](../../../releases) page (**0.72.1 — Windows**):
-- `ComicXD-0.72.1-Windows-portable.exe`: single file, no install; library and progress live in `ComicXD-dados` next to the `.exe` (falls back to `%LOCALAPPDATA%\ComicXD` if that folder is read-only).
-- `ComicXD-0.72.1-Windows-Setup.exe`: per-user install (**no admin rights**), Start Menu shortcut (optional Desktop shortcut), listed in *Settings > Apps > Installed apps*. Data in `%LOCALAPPDATA%\ComicXD`. Silent install: `Setup.exe /S`. **Automatic updates:** from 0.71.1 on, the app (portable and installed) checks for new versions on start (at most every 6 hours), asks before updating, downloads from the project's GitHub, verifies the SHA-256 and reopens itself, keeping your library. Turn it off with `ComicXD.exe --sem-atualizar` or a `sem-atualizar.txt` file in the data folder. Older versions must install 0.72.1 manually once. You can also update by hand: run a newer Setup over the old one (your library is kept). The uninstaller asks whether to also delete your library (default: keep).
+**Which one:** on the [Releases](../../../releases) page (**0.73.1 — Windows**):
+- `ComicXD-0.73.1-Windows-portable.exe`: single file, no install; library and progress live in `ComicXD-dados` next to the `.exe` (falls back to `%LOCALAPPDATA%\ComicXD` if that folder is read-only).
+- `ComicXD-0.73.1-Windows-Setup.exe`: per-user install (**no admin rights**), Start Menu shortcut (optional Desktop shortcut), listed in *Settings > Apps > Installed apps*. Data in `%LOCALAPPDATA%\ComicXD`. Silent install: `Setup.exe /S`. **Automatic updates:** from 0.71.1 on, the app (portable and installed) checks for new versions **every time it starts** (and every 30 minutes while open), asks once per version before updating, shows a **⬆ New version** button at the top right while an update is available, downloads from the project's GitHub, verifies the SHA-256 and reopens itself, keeping your library. Turn it off with `ComicXD.exe --sem-atualizar` or a `sem-atualizar.txt` file in the data folder. Older versions must install 0.73.1 manually once. You can also update by hand: run a newer Setup over the old one (your library is kept). The uninstaller asks whether to also delete your library (default: keep).
 - `SHA256.txt` and `AVISOS-DE-TERCEIROS.txt` (third-party licenses).
 
 **Keys:** F11 / Alt+Enter = fullscreen (the reader's own **F** key does the same), Esc leaves fullscreen. F5, Ctrl+R/O/U/P/S and Alt+←/→ are disabled on purpose.

@@ -507,6 +507,27 @@ async function renderRecent(){abasUI();const r=store.get('hq-recentes',[]).filte
     libGet(it.key).then(v=>{if(v&&v.capa){const u=URL.createObjectURL(v.capa);capaURLs.push(u);const im=document.createElement('img');im.className='capa';im.alt='';im.src=u;cap.replaceWith(im)}})})}
 $('fab').onclick=()=>$('file').click();$('abrir-top').onclick=()=>$('file').click();
 
+/* v0.73 — limpa os planos de leitura de versões antigas (v9…v13): nunca mais são lidos e só ocupam espaço no aparelho.
+   Roda uma vez por abertura, depois que a tela já subiu; as miniaturas e os planos da versão atual ficam. */
+(async()=>{try{await new Promise(r=>setTimeout(r,8000));const d=await db();if(!d)return;const s=d.transaction('planos','readwrite').objectStore('planos'),rq=s.openKeyCursor();
+  rq.onsuccess=()=>{const c=rq.result;if(!c)return;const k=String(c.key);if(/^v\d+\|/.test(k)&&!k.startsWith(VERSAO_PLANO+'|'))s.delete(c.key);c.continue()}}catch(e){}})();
+
+/* v0.73 — botão fixo "Nova versão" no topo, à direita (some enquanto a HQ está aberta).
+   Usado pelo .html aberto do computador (file://) e pelo app de Windows. Fica até atualizar; clicar pergunta de novo. */
+(()=>{window.__botaoNV=(v,acao)=>{if(!v){const x=document.getElementById('upd-bar');if(x)x.remove();return}
+  let r=document.getElementById('upd-bar'),b=r&&r.firstChild;
+  if(!r){const st=document.createElement('style');st.textContent='body:has(#reader:not([hidden])) #upd-bar{display:none!important}#upd-btn:hover{filter:brightness(1.1)}#upd-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}';document.head.appendChild(st);
+    /* faixa fina no topo (ocupa espaço, não cobre o menu); o botão fica à direita */
+    r=document.createElement('div');r.id='upd-bar';r.style.cssText='position:relative;z-index:9990;display:flex;justify-content:flex-end;padding:6px 12px 0;pointer-events:none';
+    b=document.createElement('button');b.id='upd-btn';b.type='button';
+    b.style.cssText='pointer-events:auto;min-height:30px;padding:0 14px;border-radius:999px;border:0;cursor:pointer;font:700 13px/1 system-ui,sans-serif;background:linear-gradient(90deg,#ff4d6d,#ffb300);color:#1a0b00;box-shadow:0 2px 10px rgba(0,0,0,.4)';
+    r.appendChild(b);document.body.insertBefore(r,document.body.firstChild)}
+  b.textContent='⬆ '+L('Nova versão ','New version ')+v;b.title=L('Há uma versão nova do ComicXD: clique para atualizar','A new ComicXD version is out: click to update');b.setAttribute('aria-label',b.title);b.onclick=acao};
+/* app de Windows: o programa guarda a versão nova que achou; o leitor pergunta de tempos em tempos e mostra o botão */
+if(typeof window.comicxdAtualizacao==='function'&&typeof window.comicxdAtualizarAgora==='function'){
+  const tick=()=>{try{window.comicxdAtualizacao().then(v=>window.__botaoNV(v||'',()=>{try{window.comicxdAtualizarAgora()}catch(e){}})).catch(()=>{})}catch(e){}};
+  setTimeout(tick,4000);setInterval(tick,20000)}})();
+
 /* v0.68 — aviso de nova versão (só no APK): consulta a última Release do GitHub ao abrir.
    "Sim" baixa o APK pelo navegador do celular; "Não" fecha e pergunta de novo na próxima abertura. */
 (()=>{if(typeof MODO_FIXO==='undefined'||(MODO_FIXO!=='toque'&&MODO_FIXO!=='web')||!/^file:/.test(location.protocol))return;
@@ -528,7 +549,12 @@ const aviso=(v,url)=>{if(document.getElementById('upd'))return;
 const checar=()=>{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
   fetch('https://api.github.com/repos/IntuneOverseer/ComicXD/releases/latest',{signal:ac.signal,headers:{Accept:'application/vnd.github+json'}})
   .then(r=>r.ok?r.json():null).then(j=>{clearTimeout(t);if(!j||!j.tag_name||!maior(j.tag_name,VERSAO))return;
-    const a=(j.assets||[]).find(x=>ALVO.test(x.name||''));if(!a)return;aviso(j.tag_name.replace(/^v/i,''),a.browser_download_url)}).catch(()=>{clearTimeout(t)})};
+    const a=(j.assets||[]).find(x=>ALVO.test(x.name||''));if(!a)return;const nv=j.tag_name.replace(/^v/i,'');
+    if(MODO_FIXO!=='web'){aviso(nv,a.browser_download_url);return}
+    /* .html baixado: botão fixo sempre; a janela de pergunta só aparece sozinha uma vez por versão */
+    window.__botaoNV(nv,()=>aviso(nv,a.browser_download_url));
+    let vista='';try{vista=localStorage.getItem('hq-upd-oferta')||''}catch(e){}
+    if(vista!==nv){try{localStorage.setItem('hq-upd-oferta',nv)}catch(e){}aviso(nv,a.browser_download_url)}}).catch(()=>{clearTimeout(t)})};
 let ult=0;const rodar=()=>{ult=Date.now();checar()};setTimeout(rodar,2500);
 /* ao voltar para o app (depois de sair e voltar), confere de novo se já passaram 3 min da última checagem */
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-ult>180000&&!document.getElementById('upd'))rodar()})})();
