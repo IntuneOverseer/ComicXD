@@ -1080,30 +1080,76 @@
     }
     // pagina sem texto: so fica inteira se tambem nao tiver quadros (quadros sem balao tambem sao lidos um a um)
     if (!bl.length && !multi && semQuadros) return { w: W, h: H, bg, guiado: false, steps: [full], baloes: bl };
-    const out = [];
-    for (const [x0, x1] of halves(W, H, bl)) {   // pagina DUPLA: le a pagina da esquerda inteira e depois a da direita
-      const X0 = trunc(x0), X1 = trunc(x1), Wc = X1 - X0;
-      const whole = X0 === 0 && X1 === W;
-      const sub = whole ? img : img.roi(new cv.Rect(X0, 0, Wc, H)).clone();
-      const bsub = bl.filter(b => x0 <= b[0] + b[2] / 2 && b[0] + b[2] / 2 < x1).map(b => [b[0] - X0, b[1], b[2], b[3]]);
-      let Gs = Gfull;
-      if (!whole) { const gm2 = toGray(sub); Gs = Uint8Array.from(gm2.data); gm2.delete(); }
-      const { steps, PR, PP } = planCover(sub, bsub, whole ? det : planPanels(sub), whole ? G7 : grayAt700(sub), Gs, !!opts.rtl);
-      if (!whole) sub.delete();
-      for (const st of steps) {
-        const zf = Number(st[2] || 2.0); let rect;
-        if (st[4] !== null && st[4] >= 0 && st[4] < PR.length) { const r = PR[st[4]], m = 0.004 * Wc; rect = [r[0] - m, r[1] - m, r[2] + 2 * m, r[3] + 2 * m]; }
-        else if (st[6]) rect = st[6].slice(); else rect = [0, 0, Wc, H];
-        rect[0] += X0;
-        const o = { cx: Math.round((st[0] + X0) * 10) / 10, cy: Math.round(st[1] * 10) / 10, z: Math.round(zf * W / Wc * 1000) / 1000, rect: rect.map(v => Math.round(v * 10) / 10), n: (st[5] || []).length };
-        const pp = st[4] !== null && st[4] >= 0 ? PP[st[4]] : null;
-        if (pp) o.poly = polyCW(pp).map(([x, y]) => [Math.round((x + X0) * 10) / 10, Math.round(y * 10) / 10]);
-        out.push(o);
+    const hv0 = halves(W, H, bl);
+    // pagina dupla: detecta os quadros de cada metade uma vez so (reaproveitado no plano)
+    let partes = null;
+    if (hv0.length > 1) partes = hv0.map(([x0, x1]) => { const X0 = trunc(x0), X1 = trunc(x1), Wc = X1 - X0; const sub = img.roi(new cv.Rect(X0, 0, Wc, H)).clone(); return { X0, X1, Wc, sub, det: planPanels(sub) }; });
+    const plano = (hv, pts) => {
+      const out = [];
+      for (let hi = 0; hi < hv.length; hi++) {   // pagina DUPLA: le a pagina da esquerda inteira e depois a da direita
+        const [x0, x1] = hv[hi], P = pts && pts[hi];
+        const X0 = trunc(x0), X1 = trunc(x1), Wc = X1 - X0;
+        const whole = X0 === 0 && X1 === W;
+        const sub = P ? P.sub : (whole ? img : img.roi(new cv.Rect(X0, 0, Wc, H)).clone());
+        const bsub = bl.filter(b => x0 <= b[0] + b[2] / 2 && b[0] + b[2] / 2 < x1).map(b => [b[0] - X0, b[1], b[2], b[3]]);
+        let Gs = Gfull;
+        if (!whole) { const gm2 = toGray(sub); Gs = Uint8Array.from(gm2.data); gm2.delete(); }
+        const { steps, PR, PP } = planCover(sub, bsub, whole ? det : (P ? P.det : planPanels(sub)), whole ? G7 : grayAt700(sub), Gs, !!opts.rtl);
+        if (!whole && !P) sub.delete();
+        for (const st of steps) {
+          const zf = Number(st[2] || 2.0); let rect;
+          if (st[4] !== null && st[4] >= 0 && st[4] < PR.length) { const r = PR[st[4]], m = 0.004 * Wc; rect = [r[0] - m, r[1] - m, r[2] + 2 * m, r[3] + 2 * m]; }
+          else if (st[6]) rect = st[6].slice(); else rect = [0, 0, Wc, H];
+          rect[0] += X0;
+          const o = { cx: Math.round((st[0] + X0) * 10) / 10, cy: Math.round(st[1] * 10) / 10, z: Math.round(zf * W / Wc * 1000) / 1000, rect: rect.map(v => Math.round(v * 10) / 10), n: (st[5] || []).length };
+          const pp = st[4] !== null && st[4] >= 0 ? PP[st[4]] : null;
+          if (pp) o.poly = polyCW(pp).map(([x, y]) => [Math.round((x + X0) * 10) / 10, Math.round(y * 10) / 10]);
+          out.push(o);
+        }
       }
-    }
+      return out;
+    };
+    // v0.72: quadro que CRUZA a divisa de uma pagina dupla (dois pedacos colados na costura, ou um quadro da pagina inteira
+    // que atravessa o centro). Nesse caso o plano "sem dividir" so e usado se COBRIR tudo que o plano dividido cobre.
+    const cruza = () => {
+      const [L, R] = partes, tol = 0.02;
+      const ps = (p) => (p.det.fonte === 'faixas' ? [] : p.det.ps);
+      for (const a_ of ps(L)) { if (a_[0] + a_[2] < L.Wc * (1 - tol)) continue;
+        for (const b_ of ps(R)) { if (b_[0] > R.Wc * tol) continue;
+          const vo = Math.max(0, Math.min(a_[1] + a_[3], b_[1] + b_[3]) - Math.max(a_[1], b_[1])) / Math.max(1, Math.min(a_[3], b_[3]));
+          const t0 = Math.abs(a_[1] - b_[1]), t1 = Math.abs((a_[1] + a_[3]) - (b_[1] + b_[3]));
+          if (vo >= 0.9 && t0 <= 0.03 * H && t1 <= 0.03 * H && a_[3] < 0.97 * H && b_[3] < 0.97 * H) return true; } }
+      if (det.fonte !== 'faixas') for (const p of det.ps) if (p[0] < W * 0.5 - 0.04 * W && p[0] + p[2] > W * 0.5 + 0.04 * W && p[2] < 0.97 * W) return true;
+      return false;
+    };
+    // cobertura: cada passo do plano dividido tem de cair dentro da janela de algum passo do plano novo (retangulo do quadro
+    // ou a janela visivel no zoom), e cada balao tambem
+    const cobre = (velho, novo) => {
+      const vis = (st, x, y) => {
+        const r = st.rect, pag = r[2] >= 0.97 * W && r[3] >= 0.97 * H;
+        if (!pag && x >= r[0] && x <= r[0] + r[2] && y >= r[1] && y <= r[1] + r[3]) return true;
+        const half = 0.4 * W / Math.max(1, st.z);
+        return Math.abs(x - st.cx) <= half && Math.abs(y - st.cy) <= half;
+      };
+      const ok = (x, y) => novo.some(st => vis(st, x, y));
+      return velho.every(st => ok(st.cx, st.cy)) && bl.every(b => ok(b[0] + b[2] / 2, b[1] + b[3] / 2));
+    };
+    let out = plano(hv0, partes);
     let lim = limparPassos(out, W, H, Gfull, bg);
+    if (partes) {
+      let trocou = false;
+      try {
+        if (cruza()) {
+          const outU = plano([[0, W]], null);
+          let limU = limparPassos(outU, W, H, Gfull, bg);
+          if (limU.length > 2 && !opts.semReordem) limU = reordenarPassos(limU, W, H, !!opts.rtl);
+          if (limU.length && lim.length && cobre(lim, limU)) { out = outU; lim = limU; trocou = true; }
+        }
+      } finally { for (const p of partes) p.sub.delete(); }
+      if (typeof globalThis !== 'undefined') globalThis.__cruza = trocou ? 'trocou' : null;
+    }
     if (!lim.length) out.length || out.push(full);
-    if (lim.length > 2 && halves(W, H, bl).length === 1 && !opts.semReordem) lim = reordenarPassos(lim, W, H, !!opts.rtl);
+    if (lim.length > 2 && hv0.length === 1 && !opts.semReordem) lim = reordenarPassos(lim, W, H, !!opts.rtl);
     return { w: W, h: H, bg, guiado: true, steps: lim.length ? lim : (out.length ? out : [full]), baloes: bl };
   }
 

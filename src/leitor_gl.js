@@ -509,7 +509,8 @@ $('fab').onclick=()=>$('file').click();$('abrir-top').onclick=()=>$('file').clic
 
 /* v0.68 — aviso de nova versão (só no APK): consulta a última Release do GitHub ao abrir.
    "Sim" baixa o APK pelo navegador do celular; "Não" fecha e pergunta de novo na próxima abertura. */
-(()=>{if(typeof MODO_FIXO==='undefined'||MODO_FIXO!=='toque'||!/^file:/.test(location.protocol))return;
+(()=>{if(typeof MODO_FIXO==='undefined'||(MODO_FIXO!=='toque'&&MODO_FIXO!=='web')||!/^file:/.test(location.protocol))return;
+const ALVO=MODO_FIXO==='toque'?/\.apk$/i:/^ComicXD-pc\.html$/i;
 const num=s=>String(s).replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
 const maior=(a,b)=>{a=num(a);b=num(b);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x>y}return false};
 const aviso=(v,url)=>{if(document.getElementById('upd'))return;
@@ -517,7 +518,7 @@ const aviso=(v,url)=>{if(document.getElementById('upd'))return;
   o.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,16,.78)';
   const c=document.createElement('div');c.style.cssText='max-width:360px;width:100%;background:#141830;border:1px solid #2a3158;border-radius:18px;padding:20px;color:#e8eaf6;font:16px/1.4 system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.6)';
   const h=document.createElement('div');h.style.cssText='font-weight:800;font-size:20px;color:#ffb300;margin-bottom:8px';h.textContent=L('Nova versão disponível','New version available');
-  const p=document.createElement('div');p.style.cssText='margin-bottom:16px;opacity:.9';p.textContent=L('A versão '+v+' do ComicXD saiu (você está na '+VERSAO+'). Quer baixar agora? O download abre no navegador e depois é só tocar para instalar.','ComicXD '+v+' is out (you have '+VERSAO+'). Download it now? The download opens in your browser, then just tap to install.');
+  const p=document.createElement('div');p.style.cssText='margin-bottom:16px;opacity:.9';p.textContent=L('A versão '+v+' do ComicXD saiu (você está na '+VERSAO+'). Quer baixar agora? '+(MODO_FIXO==='toque'?'O download abre no navegador e depois é só tocar para instalar.':'Baixa o novo arquivo .html; depois abra ele no lugar deste (guarde o arquivo na mesma pasta e abra no mesmo navegador).'),'ComicXD '+v+' is out (you have '+VERSAO+'). Download it now? '+(MODO_FIXO==='toque'?'The download opens in your browser, then just tap to install.':'It downloads the new .html file; then open it instead of this one (keep it in the same folder and open it in the same browser).'));
   const r=document.createElement('div');r.style.cssText='display:flex;gap:10px';
   const bt=(t,pri)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='flex:1;min-height:46px;border-radius:12px;border:1px solid #2a3158;font:700 16px system-ui,sans-serif;'+(pri?'background:linear-gradient(90deg,#ff4d6d,#ffb300);color:#1a0b00;border:0':'background:#1d2244;color:#e8eaf6');return b};
   const nao=bt(L('Não','No'),0),sim=bt(L('Sim, baixar','Yes, download'),1);
@@ -527,7 +528,7 @@ const aviso=(v,url)=>{if(document.getElementById('upd'))return;
 const checar=()=>{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
   fetch('https://api.github.com/repos/IntuneOverseer/ComicXD/releases/latest',{signal:ac.signal,headers:{Accept:'application/vnd.github+json'}})
   .then(r=>r.ok?r.json():null).then(j=>{clearTimeout(t);if(!j||!j.tag_name||!maior(j.tag_name,VERSAO))return;
-    const a=(j.assets||[]).find(x=>/\.apk$/i.test(x.name||''));if(!a)return;aviso(j.tag_name.replace(/^v/i,''),a.browser_download_url)}).catch(()=>{clearTimeout(t)})};
+    const a=(j.assets||[]).find(x=>ALVO.test(x.name||''));if(!a)return;aviso(j.tag_name.replace(/^v/i,''),a.browser_download_url)}).catch(()=>{clearTimeout(t)})};
 let ult=0;const rodar=()=>{ult=Date.now();checar()};setTimeout(rodar,2500);
 /* ao voltar para o app (depois de sair e voltar), confere de novo se já passaram 3 min da última checagem */
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-ult>180000&&!document.getElementById('upd'))rodar()})})();

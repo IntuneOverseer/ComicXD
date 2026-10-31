@@ -48,7 +48,7 @@ _m=_re.search(r'(<script id="hqcore" type="text/plain"[^>]*>)(.*?)(</script>)',s
 assert _m,'hqcore'
 src=src[:_m.start(2)]+_core+src[_m.end(2):]
 assert "const VERSAO_PLANO='v9';" in src
-src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v13';")
+src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v14';")
 
 # ---- v0.20: idioma PT/EN, perfil, saudacao, nome ComicXD ----
 import sys as _sys,json as _json
