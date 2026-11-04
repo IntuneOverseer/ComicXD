@@ -628,6 +628,16 @@
             }
           }
         }
+        // cand22: calha CLARA fina com cor diferente da borda da pagina (papel off-white x borda branca): so vale se a linha for fina,
+        // uniforme, tiver arte dos dois lados e estiver ALINHADA com a borda de outro quadro detectado (mesma linha da grade da pagina).
+        const cl = claroCut(x0, y0, x1, y1, r);
+        if (cl) {
+          const sub = q => { if (!r.poly) return q; const P = clipRect(r.poly, q); return P.length >= 3 && Math.abs(polyArea(P)) > 0.5 * q[2] * q[3] ? withPoly(polyBox(P), P) : q; };
+          const [axis, a, b2] = cl;
+          if (axis === 0) { rec(sub([r[0], r[1], r[2], a / k]), depth + 1); rec(sub([r[0], r[1] + (b2 + 1) / k, r[2], r[3] - (b2 + 1) / k]), depth + 1); }
+          else { rec(sub([r[0], r[1], a / k, r[3]]), depth + 1); rec(sub([r[0] + (b2 + 1) / k, r[1], r[2] - (b2 + 1) / k, r[3]]), depth + 1); }
+          return;
+        }
         // calha DIAGONAL: linha reta de borda a borda, toda na cor do fundo, com conteudo dos dois lados
         const dg = diagCut(x0, y0, x1, y1);
         if (dg) {
@@ -645,6 +655,32 @@
         }
       }
       out.push(r);
+    }
+    function claroCut(x0, y0, x1, y1, r) {
+      const rw = x1 - x0, rh = y1 - y0; if (rw < 40 || rh < 40) return null;
+      const linha = (axis, i) => { const v = []; if (axis === 0) { const y = y0 + i; for (let x = x0; x < x1; x++) v.push(g[y * gw + x]); } else { const x = x0 + i; for (let y = y0; y < y1; y++) v.push(g[y * gw + x]); } return v; };
+      const uni = (v, ref) => { let c = 0; for (const t of v) if (Math.abs(t - ref) < 14) c++; return c / v.length; };
+      for (const axis of [0, 1]) {
+        const n = axis === 0 ? rh : rw, m = Math.trunc(0.12 * n), maxT = Math.max(3, Math.trunc(0.03 * n));
+        const med = new Float64Array(n), ok = new Uint8Array(n);
+        for (let i = 0; i < n; i++) { const v = linha(axis, i); med[i] = median(v); ok[i] = (i >= m && i < n - m && med[i] >= 170 && uni(v, med[i]) >= 0.9) ? 1 : 0; }
+        for (let i = m; i < n - m; i++) {
+          if (!ok[i] || ok[i - 1]) continue;
+          let j = i; while (j + 1 < n && ok[j + 1]) j++;
+          if (j - i + 1 > maxT) { i = j; continue; }
+          const ref = med[(i + j) >> 1], ia = i - 4, jb = j + 4;
+          if (ia < 0 || jb >= n || uni(linha(axis, ia), ref) > 0.6 || uni(linha(axis, jb), ref) > 0.6) { i = j; continue; }
+          const pos = ((axis === 0 ? y0 : x0) + (i + j + 1) / 2) / k, tol = 0.02 * (axis === 0 ? H : W);
+          const alinhado = ps.some(p => p !== r && (axis === 0
+            ? (Math.abs(p[1] - pos) < tol || Math.abs(p[1] + p[3] - pos) < tol) && (p[0] >= r[0] + r[2] - 2 / k || p[0] + p[2] <= r[0] + 2 / k)
+            : (Math.abs(p[0] - pos) < tol || Math.abs(p[0] + p[2] - pos) < tol) && (p[1] >= r[1] + r[3] - 2 / k || p[1] + p[3] <= r[1] + 2 / k)));
+          if (!alinhado) { i = j; continue; }
+          const p1 = i / k, p2 = (n - j - 1) / k;
+          if (axis === 0 ? (p1 > 0.06 * H && p2 > 0.06 * H) : (p1 > 0.08 * W && p2 > 0.08 * W)) return [axis, i, j];
+          i = j;
+        }
+      }
+      return null;
     }
     const nearBg = (x, y) => { x = x | 0; y = y | 0; if (x < 0 || y < 0 || x >= gw || y >= gh) return false; const v = g[y * gw + x]; return v >= 225 || Math.abs(v - bg) < 22; };
     function lineFrac(ax, ay, bx, by, ox, oy, minF) { // fracao de pixels do fundo ao longo do segmento deslocado (ox,oy)
@@ -785,6 +821,11 @@
       let k = 0, bestKey = null;
       for (let j = 0; j < ps.length; j++) { const key = [roundHE(inter(b, ps[j]) / (b[2] * b[3]) * 10) / 10, -ps[j][2] * ps[j][3]]; if (bestKey === null || cmpTuple(key, bestKey) > 0) { bestKey = key; k = j; } }
       if (inter(b, ps[k]) === 0) k = nearestPanel(b, ps);
+      { // cand7b: balao com o CENTRO dentro de um quadro menor (inset) contido em ps[k] e >=60% dentro dele pertence ao inset
+        const cx = b[0] + b[2] / 2, cy = b[1] + b[3] / 2, pk = ps[k];
+        if (!(pk[2] > 0.92 * W && pk[3] > 0.92 * H)) for (let j = 0; j < ps.length; j++) { const q = ps[j]; if (j === k) continue;
+          if (q[2] * q[3] <= 0.67 * pk[2] * pk[3] && inter(q, pk) >= 0.8 * q[2] * q[3] && cx >= q[0] && cx <= q[0] + q[2] && cy >= q[1] && cy <= q[1] + q[3] && inter(b, q) >= 0.6 * b[2] * b[3]) { k = j; break; } }
+      }
       own[k].push(b);
     }
     const rect = ps.map((p, i) => union([p].concat(own[i].map(b => b.slice(0, 4)))));
@@ -818,6 +859,7 @@
     }
     const PR = [], SRC = [], PP = [], ROWS = {}; let steps = [];
     const visOf = s => clip(s[6] || windowAt(s[0], s[1], s[2], W, H), PR[s[4]]);
+    const UR = units.map(u => u[1]);   // cand7: retangulos de todas as unidades (para achar quadro menor DENTRO deste)
     for (const [idxs, r] of units) {
       const bs = [].concat(...idxs.map(i => own[i]));
       const bsAll = bl.filter(b => inter(b, r) > 0);
@@ -851,6 +893,15 @@
         tiles.push(best.slice(1));
       }
       const S = 8.0 / Math.max(1.0, W / 100), CW = trunc(W * S) + 2, CH = trunc(H * S) + 2, cov = new Uint8Array(CW * CH), seen = new Set();
+      // cand7 (0.74): quadro menor que esta DENTRO deste (inset) tem passos proprios. A area dele ja conta como coberta aqui,
+      // senao a grade do quadro grande tambem passa por cima dele, os passos se fundem e a leitura alterna entre os dois quadros.
+      for (const q of UR) {
+        if (q === r || (r[2] > 0.92 * W && r[3] > 0.92 * H)) continue; const aq = q[2] * q[3];   // pagina inteira (sem quadros fechados): nao
+        if (aq > 0.67 * r[2] * r[3] || inter(q, r) < 0.8 * aq) continue;
+        const qx0 = Math.max(0, trunc(Math.max(q[0], r[0]) * S)), qy0 = Math.max(0, trunc(Math.max(q[1], r[1]) * S));
+        const qx1 = Math.min(CW, trunc(Math.min(q[0] + q[2], r[0] + r[2]) * S)), qy1 = Math.min(CH, trunc(Math.min(q[1] + q[3], r[1] + r[3]) * S));
+        for (let yy = qy0; yy < qy1; yy++) if (qx1 > qx0) cov.fill(1, yy * CW + qx0, yy * CW + qx1);
+      }
       for (const [x_, y_, win] of tiles) {
         const v = clip(win, r);
         if (blank(v)) continue;
@@ -1019,11 +1070,158 @@
   // Ordem de leitura por relacao "A vem antes de B" (mais robusta que cortes em faixas quando os quadros se encavalam):
   //  - bem acima -> vem antes;  - lado a lado -> o da esquerda (ou da direita em mangá);  - encavalados -> o de cima, senao o da esquerda.
   // Os passos de um mesmo quadro ficam juntos e na ordem que ja tinham.
-  function reordenarPassos(steps, W, H, rtl) {
+  // cand5 (0.74): dentro de uma sequencia de passos do MESMO quadro, um passo mais de 15% da altura da pagina acima de um passo anterior
+  // (lido antes) passa a ser lido antes dele (balao de cima antes do de baixo). So age quando existe esse salto; senao nada muda.
+  function corrigeSobe(seq, H) {
+    const tol = 0.15 * H, key = s => s.rect.map(v => Math.round(v)).join(','), out = [];
+    let i = 0;
+    while (i < seq.length) {
+      let j = i; while (j < seq.length && key(seq[j]) === key(seq[i])) j++;
+      const res = [];
+      for (const s of seq.slice(i, j)) { const k = res.findIndex(q => q.cy > s.cy + tol); if (k < 0) res.push(s); else res.splice(k, 0, s); }
+      out.push(...res); i = j;
+    }
+    return out;
+  }
+  // cand6 (0.74): passo SEM balao cuja janela ja foi >=90% mostrada pelas janelas dos passos ANTERIORES nao acrescenta nada
+  // (so faz o leitor voltar a algo ja visto): sai. Passo com balao nunca sai.
+  function tiraRepetidos(seq, W, H) {
+    // cand8: compara a area VISIVEL (janela recortada ao quadro do passo), nao a janela inteira (que e mais alta que o quadro e "cobria" quadros vizinhos)
+    const win = s => { const ww = W / Math.max(1, s.z), wh = ww / ASP; let x0 = s.cx - ww / 2, y0 = s.cy - wh / 2, x1 = x0 + ww, y1 = y0 + wh;
+      const r = s.rect; if (r) { x0 = Math.max(x0, r[0]); y0 = Math.max(y0, r[1]); x1 = Math.min(x1, r[0] + r[2]); y1 = Math.min(y1, r[1] + r[3]); }
+      return [x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0)]; };
+    const out = [];
+    for (const s of seq) {
+      if (s.n > 0 || !out.length) { out.push(s); continue; }
+      const w = win(s); let tot = 0, cob = 0;
+      for (let y = w[1] + 10; y < w[1] + w[3]; y += 20) for (let x = w[0] + 10; x < w[0] + w[2]; x += 20) {
+        if (x < 0 || y < 0 || x >= W || y >= H) continue; tot++;
+        if (out.some(q => { const v = win(q); return x >= v[0] && x <= v[0] + v[2] && y >= v[1] && y <= v[1] + v[3]; })) cob++;
+      }
+      if (tot && cob / tot >= 0.9) continue;
+      out.push(s);
+    }
+    // cand12: passo SEM balao que ja foi coberto >=90% pelas janelas dos passos ja mantidos MAIS o proximo passo do mesmo quadro
+    // (tipico: quadro alto e largo varrido em 3 janelas quase iguais) sai; o passo seguinte (que traz o balao inteiro) fica.
+    const key = s => (s.rect || []).map(v => Math.round(v)).join(',');
+    const fin = [];
+    for (let i = 0; i < out.length; i++) {
+      const s = out[i], nx = out[i + 1];
+      if (s.n > 0 || !fin.length || !nx || key(nx) !== key(s) || key(fin[fin.length - 1]) !== key(s)) { fin.push(s); continue; }
+      const w = win(s); let tot = 0, cob = 0;
+      for (let y = w[1] + 10; y < w[1] + w[3]; y += 20) for (let x = w[0] + 10; x < w[0] + w[2]; x += 20) {
+        if (x < 0 || y < 0 || x >= W || y >= H) continue; tot++;
+        if ([fin[fin.length - 1], nx].some(q => { const v = win(q); return x >= v[0] && x <= v[0] + v[2] && y >= v[1] && y <= v[1] + v[3]; })) cob++;
+      }
+      if (tot && cob / tot >= 0.85) continue;
+      fin.push(s);
+    }
+    return fin;
+  }
+  // cand13: quadro que passa da janela so ate 15% na altura virou 2 fileiras quase iguais (esq, dir, esq de novo = "volta para tras").
+  // Se couber numa fileira com zoom um pouco menor (>=1.55) e TODO balao do quadro ficar inteiro numa janela, troca pelas colunas de uma fileira so.
+  function fixGrandes(steps, bl, W, H, rtl) {
+    if (steps.length < 3) return steps;
+    const key = s => (s.rect || []).map(v => Math.round(v)).join(','), out = [];
+    let i = 0;
+    while (i < steps.length) {
+      let j = i; while (j < steps.length && key(steps[j]) === key(steps[i])) j++;
+      const g = steps.slice(i, j); let done = false;
+      const r = g[0].rect;
+      const aninhado = r && steps.some(s => key(s) !== key(g[0]) && s.rect && s.rect[0] + s.rect[2] / 2 > r[0] && s.rect[0] + s.rect[2] / 2 < r[0] + r[2] && s.rect[1] + s.rect[3] / 2 > r[1] && s.rect[1] + s.rect[3] / 2 < r[1] + r[3]);
+      if (g.length >= 3 && r && !aninhado && g.every(s => s.z >= 1.5)) {
+        const zNew = Math.round(W / (r[3] * ASP) / 1.02 * 1000) / 1000, z0 = Math.min.apply(null, g.map(s => s.z));
+        if (zNew >= 1.55 && zNew < z0 && zNew >= z0 * 0.85) {
+          const ww = W / zNew, wh = ww / ASP, ncol = Math.max(1, Math.ceil(r[2] / ww - 0.12));
+          if (ncol < g.length) {
+            const ns = [];
+            for (let c = 0; c < ncol; c++) {
+              const cx = ncol === 1 ? r[0] + r[2] / 2 : r[0] + ww / 2 + c * (r[2] - ww) / (ncol - 1);
+              ns.push({ cx: Math.max(ww / 2, Math.min(W - ww / 2, cx)), cy: r[1] + r[3] / 2, z: zNew, rect: r, n: 0 });
+            }
+            if (rtl) ns.reverse();
+            const inside = (b, w) => b[0] >= w.cx - ww / 2 - 1 && b[1] >= w.cy - wh / 2 - 1 && b[0] + b[2] <= w.cx + ww / 2 + 1 && b[1] + b[3] <= w.cy + wh / 2 + 1;
+            const mine = bl.filter(b => b[0] + b[2] / 2 >= r[0] && b[0] + b[2] / 2 <= r[0] + r[2] && b[1] + b[3] / 2 >= r[1] && b[1] + b[3] / 2 <= r[1] + r[3]);
+            if (mine.every(b => ns.some(w => inside(b, w)))) {
+              for (const w of ns) w.n = mine.filter(b => inside(b, w)).length;
+              out.push(...ns); done = true;
+            }
+          }
+        }
+      }
+      if (!done) out.push(...g);
+      i = j;
+    }
+    return out;
+  }
+  // cand16: balao com o CENTRO dentro da janela mas cortado na borda -> a janela desliza (mesmo zoom, ate 20% do tamanho) para te-lo inteiro.
+  // So vale se o balao cabe na janela e se nenhum balao que ja estava inteiro passa a ficar cortado.
+  function fixCortados(steps, bl, W, H) {
+    if (!bl.length) return steps;
+    return steps.map(s => {
+      if (!(s.z >= 1.5)) return s;
+      const ww = W / s.z, wh = ww / ASP;
+      const box = (cx, cy) => [cx - ww / 2, cy - wh / 2, cx + ww / 2, cy + wh / 2];
+      const inside = (b, w) => b[0] >= w[0] - 1 && b[1] >= w[1] - 1 && b[0] + b[2] <= w[2] + 1 && b[1] + b[3] <= w[3] + 1;
+      let cx = s.cx, cy = s.cy, w = box(cx, cy), mudou = false;
+      for (const b of bl) {
+        const bcx = b[0] + b[2] / 2, bcy = b[1] + b[3] / 2;
+        if (inside(b, w) || bcx < w[0] || bcx > w[2] || bcy < w[1] || bcy > w[3]) continue;
+        if (b[2] > ww || b[3] > wh) continue;
+        let nx = cx, ny = cy;
+        if (b[0] < w[0]) nx = b[0] + ww / 2; else if (b[0] + b[2] > w[2]) nx = b[0] + b[2] - ww / 2;
+        if (b[1] < w[1]) ny = b[1] + wh / 2; else if (b[1] + b[3] > w[3]) ny = b[1] + b[3] - wh / 2;
+        nx = Math.min(W - ww / 2, Math.max(ww / 2, nx)); ny = Math.min(H - wh / 2, Math.max(wh / 2, ny));
+        if (Math.abs(nx - cx) > 0.2 * ww || Math.abs(ny - cy) > 0.2 * wh) continue;
+        const w2 = box(nx, ny);
+        if (!inside(b, w2)) continue;
+        if (bl.some(o => o !== b && inside(o, w) && !inside(o, w2))) continue;
+        // guarda de cobertura: a janela nova nao pode deixar sem ver (nem nesta nem em outro passo) mais de 2% do que a antiga mostrava do quadro
+        {
+          const r = s.rect || [0, 0, W, H], ax0 = Math.max(w[0], r[0], 0), ay0 = Math.max(w[1], r[1], 0), ax1 = Math.min(w[2], r[0] + r[2], W), ay1 = Math.min(w[3], r[1] + r[3], H);
+          let tot = 0, perd = 0;
+          for (let y = ay0 + 12; y < ay1; y += 25) for (let x = ax0 + 12; x < ax1; x += 25) {
+            tot++;
+            if (x >= w2[0] && x <= w2[2] && y >= w2[1] && y <= w2[3]) continue;
+            if (steps.some(q => { if (q === s) return false; const qw = W / q.z, qh = qw / ASP; return x >= q.cx - qw / 2 && x <= q.cx + qw / 2 && y >= q.cy - qh / 2 && y <= q.cy + qh / 2; })) continue;
+            perd++;
+          }
+          if (tot && perd / tot > 0.008) continue;
+        }
+        cx = nx; cy = ny; w = w2; mudou = true;
+      }
+      return mudou ? Object.assign({}, s, { cx: Math.round(cx * 10) / 10, cy: Math.round(cy * 10) / 10 }) : s;
+    });
+  }
+  // cand20: janela (recortada ao quadro) praticamente IGUAL a de um passo anterior (IoU >= 0.93) mostra o mesmo conteudo de novo: sai.
+  // Visao inteira (z <= 1.05: capa, abertura/fechamento de pagina de imagem) nunca sai.
+  function tiraIguais(steps, W) {
+    const win = s => { const ww = W / Math.max(1, s.z), wh = ww / ASP; let x0 = s.cx - ww / 2, y0 = s.cy - wh / 2, x1 = x0 + ww, y1 = y0 + wh;
+      const r = s.rect; if (r) { x0 = Math.max(x0, r[0]); y0 = Math.max(y0, r[1]); x1 = Math.min(x1, r[0] + r[2]); y1 = Math.min(y1, r[1] + r[3]); }
+      return [x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0)]; };
+    const iou = (a, b) => { const x0 = Math.max(a[0], b[0]), y0 = Math.max(a[1], b[1]), x1 = Math.min(a[0] + a[2], b[0] + b[2]), y1 = Math.min(a[1] + a[3], b[1] + b[3]); const i = Math.max(0, x1 - x0) * Math.max(0, y1 - y0); const u = a[2] * a[3] + b[2] * b[3] - i; return u > 0 ? i / u : 0; };
+    const out = [];
+    for (const s of steps) {
+      if (s.z > 1.05 && out.some(q => q.z > 1.05 && iou(win(q), win(s)) >= 0.93)) continue;
+      out.push(s);
+    }
+    return out;
+  }
+  function reordenarPassos(steps, W, H, rtl) { return tiraRepetidos(corrigeSobe(reordenarPassos0(steps, W, H, rtl), H), W, H); }
+  function reordenarPassos0(steps, W, H, rtl) {
     const grupos = []; let ult = null;
     for (const s of steps) { const k = s.rect.map(v => Math.round(v)).join(','); if (ult === k) grupos[grupos.length - 1].st.push(s); else { grupos.push({ r: s.rect, st: [s] }); ult = k; } }
-    if (grupos.length < 3) return steps;
-    if (grupos.some(g => g.r[2] > 0.92 * W && g.r[3] > 0.92 * H)) return steps;   // quadro unico do tamanho da pagina: nao mexe
+    if (grupos.length < 2) return steps;
+    // cand2 (0.74): QUADRO DENTRO DE QUADRO MAIOR. O quadro grande "cobre" o pequeno: antes vinham todos os passos do grande e DEPOIS o pequeno
+    // (o leitor voltava a um quadro que ja tinha visto). Agora o pequeno entra na ordem de leitura, antes dos passos do grande que estao
+    // abaixo dele ou na mesma linha a sua direita; passo do grande sem balao, centrado no pequeno e ja coberto pelos outros, e descartado.
+    const areaR = r => r[2] * r[3];
+    const dentroDe = (a, b) => { const x0 = Math.max(a[0], b[0]), y0 = Math.max(a[1], b[1]), x1 = Math.min(a[0] + a[2], b[0] + b[2]), y1 = Math.min(a[1] + a[3], b[1] + b[3]); return x1 > x0 && y1 > y0 && (x1 - x0) * (y1 - y0) >= 0.8 * areaR(b) && areaR(a) >= 1.5 * areaR(b); };
+    const par = [];   // [indice do pequeno, indice do grande que o contem (o menor deles)]
+    grupos.forEach((g, j) => { let best = -1; grupos.forEach((h, i) => { if (i !== j && dentroDe(h.r, g.r) && (best < 0 || areaR(h.r) < areaR(grupos[best].r))) best = i; }); if (best >= 0) par.push([j, best]); });
+    const paginaInteira = grupos.some(g => g.r[2] > 0.92 * W && g.r[3] > 0.92 * H);
+    if (grupos.length < 3 && !par.length) return steps;
+    if (paginaInteira && !par.length) return steps;   // quadro unico do tamanho da pagina: nao mexe
     const ov = (a0, a1, b0, b1) => Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
     // -1: a antes de b; 1: b antes de a; 0: indiferente
     const rel = (A, B) => {
@@ -1046,7 +1244,40 @@
       for (const i of cand) if (pick < 0 || rest[i].r[1] < rest[pick].r[1] - 1e-6 || (Math.abs(rest[i].r[1] - rest[pick].r[1]) < 1e-6 && (rest[i].r[0] < rest[pick].r[0]) !== rtl)) pick = i;
       out.push(...rest[pick].st); rest.splice(pick, 1);
     }
-    return out;
+    return par.length ? ajustaAninhados(paginaInteira ? steps : out, grupos, par, W, H, rtl) : out;
+  }
+  function ajustaAninhados(seq, grupos, par, W, H, rtl) {
+    seq = seq.slice();
+    const dropSet = new Set();
+    const ordem = par.slice().sort((a, b) => (grupos[a[0]].r[0] - grupos[b[0]].r[0]) * (rtl ? -1 : 1));
+    const win = s => { const ww = W / Math.max(1, s.z), wh = ww / ASP; return [s.cx - ww / 2, s.cy - wh / 2, ww, wh]; };
+    for (const [j, i] of ordem) {
+      const N = grupos[j], E = grupos[i], r = N.r, bot = r[1] + r[3], tol = 0.2 * r[3];
+      const doGrande = new Set(E.st);
+      const depois = s => doGrande.has(s) && !dropSet.has(s) && (s.cy > bot || (s.cy >= r[1] - tol && (rtl ? s.cx < r[0] : s.cx > r[0] + r[2])));
+      // cand3: passos COM balao do grande cujo centro esta dentro do pequeno sao conteudo do pequeno: entram no bloco, ordenados por linha e depois por x
+      const dentroN = s => s.n > 0 && !dropSet.has(s) && s.cx >= r[0] && s.cx <= r[0] + r[2] && s.cy >= r[1] && s.cy <= bot;
+      const extra = new Set(E.st.filter(dentroN));
+      const membros = s => N.st.includes(s) || extra.has(s);
+      const bloco = seq.filter(membros).sort((a, b) => Math.abs(a.cy - b.cy) > 0.12 * r[3] ? a.cy - b.cy : ((a.cx - b.cx) * (rtl ? -1 : 1))), sem = seq.filter(s => !membros(s));
+      const idx = sem.findIndex(depois);
+      const nova = idx >= 0 ? sem.slice(0, idx).concat(bloco, sem.slice(idx)) : null;
+      if (nova && nova.some((s, k) => s !== seq[k])) {   // o pequeno entra logo ANTES do primeiro passo do grande que na leitura vem depois dele
+        seq = nova;
+        // passo do grande, sem balao, com o centro dentro do pequeno e janela ja coberta pelas outras: repetido, sai
+        for (const s of E.st) {
+          if (s.n > 0 || dropSet.has(s)) continue;
+          if (!(s.cx >= r[0] && s.cx <= r[0] + r[2] && s.cy >= r[1] && s.cy <= bot)) continue;
+          const w = win(s); let tot = 0, cob = 0;
+          for (let y = w[1] + 10; y < w[1] + w[3]; y += 20) for (let x = w[0] + 10; x < w[0] + w[2]; x += 20) {
+            if (x < 0 || y < 0 || x >= W || y >= H) continue; tot++;
+            if (seq.some(q => { if (q === s || dropSet.has(q)) return false; const v = win(q); return x >= v[0] && x <= v[0] + v[2] && y >= v[1] && y <= v[1] + v[3]; })) cob++;
+          }
+          if (tot && cob / tot >= 0.9) dropSet.add(s);
+        }
+      }
+    }
+    return seq.filter(s => !dropSet.has(s));
   }
   function analyze(cvLib, img, opts) {
     cv = cvLib; opts = opts || {}; setZoom(opts.zoom || 2.3);
@@ -1068,6 +1299,70 @@
     if (semQuadros && multi) semQuadros = false;
     const areaTxt = bl.reduce((t, b) => t + b[2] * b[3], 0) / (W * H);
     const full = { cx: W / 2, cy: H / 2, z: 1.0, rect: [0, 0, W, H], n: 0 };
+    const hvD = halves(W, H, bl);
+    // cand14 (0.74): PAGINA DUPLA sem enquadramento: cada pagina vira 4 partes (2 colunas x 2 linhas) em Z, como o Kindle.
+    // A linha de corte anda (ate 15%) para nao atravessar balao; cada janela tem 3% de folga na costura.
+    if (hvD.length > 1 && H >= 1200 && !opts.semQuadrantes) {
+      const qs = [], order = opts.rtl ? [1, 0] : [0, 1];
+      for (const hi of order) {
+        const [x0, x1] = hvD[hi], Wc = x1 - x0, mg = 0.03;
+        const mine = bl.filter(b => x0 <= b[0] + b[2] / 2 && b[0] + b[2] / 2 < x1);
+        const cut = (lo, len, axis) => { // melhor corte perto do meio: o que atravessa menos baloes
+          let best = lo + len / 2, bs = Infinity;
+          for (let t = -0.15; t <= 0.1501; t += 0.01) {
+            const c = lo + len * (0.5 + t);
+            const crossed = mine.filter(b => axis === 0 ? (b[0] < c - 2 && b[0] + b[2] > c + 2) : (b[1] < c - 2 && b[1] + b[3] > c + 2)).length;
+            const sc = crossed * 10 + Math.abs(t);
+            if (sc < bs) { bs = sc; best = c; }
+          }
+          return best;
+        };
+        const cx0 = cut(x0, Wc, 0), cy0 = cut(0, H, 1);
+        const cols = [[x0, cx0 + mg * Wc], [cx0 - mg * Wc, x1]], rows = [[0, cy0 + mg * H], [cy0 - mg * H, H]];
+        if (opts.rtl) cols.reverse();
+        for (const [ya0, yb0] of rows) for (const [xa0, xb0] of cols) {
+          let xa = xa0, xb = xb0, ya = ya0, yb = yb0;
+          let bw = xb - xa, bh = yb - ya;
+          // janela maior se algum texto/balao da pagina e mais largo/alto que a parte (ex.: creditos com linhas largas)
+          const mw = Math.max(0, ...mine.map(b => b[2])) * 1.05, mh = Math.max(0, ...mine.map(b => b[3])) * 1.05;
+          if (mw > bw) { const c = (xa + xb) / 2; bw = Math.min(mw, x1 - x0); xa = Math.max(x0, Math.min(c - bw / 2, x1 - bw)); xb = xa + bw; }
+          if (mh > bh) { const c = (ya + yb) / 2; bh = Math.min(mh, H); ya = Math.max(0, Math.min(c - bh / 2, H - bh)); yb = ya + bh; }
+          const z = Math.min(W / bw, W / (bh * ASP)) / 1.0;
+          const n = mine.filter(b => b[0] >= xa - 1 && b[0] + b[2] <= xb + 1 && b[1] >= ya - 1 && b[1] + b[3] <= yb + 1).length;
+          qs.push({ cx: Math.round((xa + xb) / 2 * 10) / 10, cy: Math.round((ya + yb) / 2 * 10) / 10, z: Math.round(z * 1000) / 1000, rect: [Math.round(xa), Math.round(ya), Math.round(bw), Math.round(bh)], n });
+        }
+      }
+      // so vale se TODO balao/texto ficar inteiro em alguma parte; senao (ex.: creditos com linhas largas) segue o plano normal por quadros
+      // cand15: ate 2 baloes cortados -> a janela mais proxima desliza (mesmo zoom) para te-los inteiros; vale so se nenhum outro balao passar a ficar cortado
+      {
+        const ins = (q, b) => { const ww = W / q.z, wh = ww / ASP; return b[0] >= q.cx - ww / 2 - 1 && b[1] >= q.cy - wh / 2 - 1 && b[0] + b[2] <= q.cx + ww / 2 + 1 && b[1] + b[3] <= q.cy + wh / 2 + 1; };
+        const cortes = () => bl.filter(b => !qs.some(q => ins(q, b)));
+        const c0 = cortes();
+        if (c0.length > 0 && c0.length <= 2) {
+          const bak = qs.map(q => Object.assign({}, q));
+          for (const b of c0) {
+            let best = null, bd = Infinity;
+            for (const q of qs) { const ww = W / q.z, wh = ww / ASP; if (b[2] > ww || b[3] > wh) continue; const d = Math.hypot(q.cx - (b[0] + b[2] / 2), q.cy - (b[1] + b[3] / 2)); if (d < bd) { bd = d; best = q; } }
+            if (!best) continue;
+            const ww = W / best.z, wh = ww / ASP;
+            const nx = Math.min(Math.max(best.cx, b[0] + b[2] - ww / 2), b[0] + ww / 2), ny = Math.min(Math.max(best.cy, b[1] + b[3] - wh / 2), b[1] + wh / 2);
+            best.cx = Math.round(Math.min(W - ww / 2, Math.max(ww / 2, nx)) * 10) / 10; best.cy = Math.round(Math.min(H - wh / 2, Math.max(wh / 2, ny)) * 10) / 10;
+          }
+          if (cortes().length > 0) for (let i = 0; i < qs.length; i++) Object.assign(qs[i], bak[i]);
+        }
+      }
+      const cortado = bl.some(b => !qs.some(q => { const ww = W / q.z, wh = ww / ASP; return b[0] >= q.cx - ww / 2 - 1 && b[1] >= q.cy - wh / 2 - 1 && b[0] + b[2] <= q.cx + ww / 2 + 1 && b[1] + b[3] <= q.cy + wh / 2 + 1; }));
+      if (!cortado) {
+      if (typeof globalThis !== 'undefined') globalThis.__cruza = null;
+      return { w: W, h: H, bg, guiado: true, tipo: 'dupla-quadrantes', steps: qs, baloes: bl };
+      }
+    }
+    // cand11 (F12, capa/pagina final): pagina sem quadros cujos "baloes" sao TODOS pequenos (< 25% da largura/altura: logo, selo, codigo de barras,
+    // creditos) e ficam na margem externa nao e texto de historia: fica inteira (um passo), em vez de pular entre cantos.
+    if (bl.length >= 2 && semQuadros && areaTxt < 0.03) {
+      const mg = 0.14;
+      if (bl.every(b => { const cx = b[0] + b[2] / 2, cy = b[1] + b[3] / 2; return b[2] < 0.25 * W && b[3] < 0.25 * H && (cx < mg * W || cx > (1 - mg) * W || cy < mg * H || cy > (1 - mg) * H); })) return { w: W, h: H, bg, guiado: false, steps: [full], baloes: bl };
+    }
     if (bl.length && semQuadros && areaTxt < 0.03 && bl.length <= 5) {
       const sts = [Object.assign({}, full)];
       const sorted = bl.slice().sort((a, b) => (roundHE(a[1] / (0.06 * H)) - roundHE(b[1] / (0.06 * H))) || (a[0] - b[0]));
@@ -1150,7 +1445,7 @@
     }
     if (!lim.length) out.length || out.push(full);
     if (lim.length > 2 && hv0.length === 1 && !opts.semReordem) lim = reordenarPassos(lim, W, H, !!opts.rtl);
-    return { w: W, h: H, bg, guiado: true, steps: lim.length ? lim : (out.length ? out : [full]), baloes: bl };
+    return { w: W, h: H, bg, guiado: true, steps: tiraIguais(fixCortados(fixGrandes(lim.length ? lim : (out.length ? out : [full]), bl, W, H, !!opts.rtl), bl, W, H), W), baloes: bl };
   }
 
   root.HQ = { analyze, detectBalloons: (c, img) => { cv = c; return detectBalloons(img); }, planPanels: (c, img) => { cv = c; return planPanels(img); }, ASP };

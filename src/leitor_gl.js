@@ -223,16 +223,22 @@ async function openPage(i,last){const tok=++openToken;wantPage=i;fimFechar();if(
     if(livreWeb()&&(LW||(LS>0?zS>1.04:LZ>1.04))){const zr=LW?Math.max(1,(VW/p.w)/Math.min(VW/p.w,VH/p.h)):(LS>0?zS:LZ),md=ehManga()?mgDir():null,px=md==='rtl'?(last?0:p.w):md==='ltr'?(last?p.w:0):(document.documentElement.dataset.modo==='toque'?0:(LW?.5:LX)*p.w),q=pose(p,px,last?p.h:0,zr);c={cx:q.cx,cy:q.cy,z:q.z,r:[0,0,p.w,p.h]}}}else{si=last?sMax(p):sMin(p);c=alvoDoPasso(p)}
   mostrarPagina(e,c,trocou);label();agendarSalvar();preCarregar(tok)}
 // aviso de fim: so aparece quando a pessoa tenta avancar alem da ultima pagina
-let fimOn=false,fimT=0;
+let fimOn=false,fimT=0,fimProx=null,fimTok=0,proxAbrir=null;
 function fimMostrar(){if(fimOn||!book||performance.now()<fimT)return;fimOn=true;menu(false);
   $('fim-t').textContent=wtOn?L('Fim do capítulo','End of chapter'):L('Fim da leitura','End of reading');
   $('fim-p').textContent=wtOn?L('Você chegou ao final deste webtoon.','You reached the end of this webtoon.'):L('Você chegou à última página.','You reached the last page.');
   $('fim-lib').textContent=L('Voltar para a biblioteca','Back to library');$('fim-x').textContent=L('Continuar aqui','Stay here');
-  $('fim').hidden=false;try{$('fim-lib').focus({preventScroll:true})}catch(e){}}
-function fimFechar(){if(!fimOn&&$('fim').hidden)return;fimOn=false;$('fim').hidden=true;fimT=performance.now()+900}
+  fimProx=null;$('fim-prox').hidden=true;$('fim-lib').classList.remove('ghost');const tk=++fimTok;
+  $('fim').hidden=false;try{$('fim-lib').focus({preventScroll:true})}catch(e){}
+  // v0.74: se a biblioteca tem o proximo capitulo da mesma serie, oferece abrir
+  proxCapitulo(book.key,{key:book.key,name:book.name,manga:!!book.manga}).then(it=>{if(!it||tk!==fimTok||!fimOn)return;fimProx=it;
+    $('fim-prox').textContent=L('Ler o próximo capítulo','Read the next chapter');$('fim-p').textContent+=' '+L('Próximo na biblioteca: ','Next in your library: ')+String(it.name).replace(/_+/g,' ');
+    $('fim-prox').hidden=false;$('fim-lib').classList.add('ghost');try{$('fim-prox').focus({preventScroll:true})}catch(e){}}).catch(()=>{})}
+function fimFechar(){fimTok++;if(!fimOn&&$('fim').hidden)return;fimOn=false;$('fim').hidden=true;fimT=performance.now()+900}
 let bibDepois=false;   // 'Voltar para a biblioteca' do aviso de fim: abre a tela da biblioteca (estante), nao a tela inicial
 $('fim-lib').onclick=()=>{fimOn=false;$('fim').hidden=true;fimT=0;bibDepois=true;$('back').click()};
 $('fim-x').onclick=fimFechar;
+$('fim-prox').onclick=()=>{const it=fimProx;if(!it)return;fimOn=false;$('fim').hidden=true;fimT=0;proxAbrir=it;$('back').click()};
 function next(){if(wtOn){wtRolar(1);return}const p=curPlan();if(!guided||p.provisorio){if(pi<book.pages.length-1)openPage(pi+1);else fimMostrar();return}
   if(si<sMax(p))goStep(si+1);else if(pi<book.pages.length-1)openPage(pi+1);else fimMostrar()}
 function prev(){fimFechar();if(wtOn){wtRolar(-1);return}const p=curPlan();if(!guided||p.provisorio){if(pi>0)openPage(pi-1);return}
@@ -428,7 +434,8 @@ $('next').onclick=next;$('prev').onclick=prev;
 $('slider').oninput=()=>{const k=+$('slider').value-1;previewPage(k);tirasIr(k,false)};
 function voltarBiblioteca(){fimOn=false;$('fim').hidden=true;fimT=0;pararAnim();fecharGrade();menu(false);thReset();$('reader').hidden=true;$('home').hidden=false;openToken++;save();lzPersistir();soltarTudo();mgSair();renderRecent();renderOla();
   try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
-  bibDepois=false;try{bibAbrir(true)}catch(e){}}
+  bibDepois=false;try{bibAbrir(true)}catch(e){}
+  if(proxAbrir){const it=proxAbrir;proxAbrir=null;setTimeout(()=>{abrirDaEstante(it)},150)}}
 let saindo=false;
 $('back').onclick=()=>{if(history.state&&history.state.hq==='leitor'){saindo=true;history.back()}else voltarBiblioteca()};
 addEventListener('popstate',()=>{if($('reader').hidden)return;

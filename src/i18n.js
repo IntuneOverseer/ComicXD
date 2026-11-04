@@ -1,6 +1,9 @@
 /* ---------- idioma (PT/EN) ---------- */
 const EN={
 'Biblioteca: mover para qualquer categoria, selecionar vários títulos de uma vez e escolher se o arquivo entra como HQ ou mangá.':'Library: move to any category, select several titles at once and choose whether a file is added as comics or manga.',
+'Leitura guiada mais precisa: menos quadros pulados ou repetidos, menos balões cortados, e capas e páginas de imagem lidas de forma mais natural.':'More accurate guided reading: fewer skipped or repeated panels, fewer cut-off balloons, and covers and image pages read more naturally.',
+'Páginas duplas: a leitura guiada agora percorre 4 partes por página (8 no total), sem cortar balão.':'Double pages: guided reading now covers 4 parts per page (8 in total), without cutting balloons.',
+'Ao terminar uma HQ, botão para ler o próximo capítulo da mesma série que já estiver na biblioteca.':'When you finish a comic, a button to read the next chapter of the same series if it is already in your library.',
 'Aviso de nova versão ao abrir o app (Android).':'New-version notice when you open the app (Android).',
 'Novidades':'What\'s new','Tom da página agora só no mangá: as HQs ficam mais fluidas com os filtros de cores.':'Page tint is now manga-only: comics run smoother with the color filters.','Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.':'Library: reads the ComicInfo.xml of CBZ files (series, number, author) and you can edit it in ⋯ › Edit info. New sort: Series / number.','Voltar leva para a biblioteca (HQ e mangá).':'Back goes to the library (comics and manga).',
 '<b>✂ Cortar bordas</b> também nas HQs, em Página inteira e Vertical.':'<b>✂ Trim borders</b> now also in comics, in Full page and Vertical.',

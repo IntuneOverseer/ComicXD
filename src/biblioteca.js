@@ -234,3 +234,27 @@ $('bib-bkb').onclick=()=>{const o={v:1,t:Date.now(),ls:{}};for(let i=0;i<localSt
 $('bib-bk-c').onclick=async()=>{const t=$('bib-bk-t');t.select();let ok=false;try{await navigator.clipboard.writeText(t.value);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(x){}}aviso(ok?L('Backup copiado. Cole em um lugar seguro.','Backup copied. Paste it somewhere safe.'):L('Selecione o texto e copie manualmente.','Select the text and copy it manually.'))};
 $('bib-bk-r').onclick=()=>{try{const o=JSON.parse($('bib-bk-t').value);if(!o||!o.ls)throw 0;let n=0;for(const k in o.ls){try{localStorage.setItem(k,o.ls[k]);n++}catch(e){}}aviso(L('Progresso restaurado ('+n+' itens). Reabrindo…','Progress restored ('+n+' items). Reloading…'));setTimeout(()=>location.reload(),900)}catch(e){aviso(L('Texto de backup inválido.','Invalid backup text.'))}};
 $('bib-bk-x').onclick=()=>{$('bib-bk').hidden=true};
+
+/* ---------- v0.74: proximo capitulo (mesma serie na biblioteca) ---------- */
+const semAcento=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+const normSerie=s=>semAcento(s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+const RUIDO_NOME=/\b(?:v\d{1,2}|shinobi|zona ?fantasma|zf|sq|digital|empire|shan|cbr|cbz|pdf|epub|soquadrinhos|scans?|hd|ptbr|pt-br|web)\b/gi;
+// "Deadpool__13_V9__Shinobi-2025_" -> {s:'deadpool',n:13}. So o numero e a serie; o resto (versao, scan, ano) e ruido.
+function serieNumDoNome(nome){
+  let t=semAcento(semExt(String(nome||''))).replace(/_+/g,' ').replace(/\([^)]*\)|\[[^\]]*\]/g,' ').replace(RUIDO_NOME,' ').replace(/\b(?:19|20)\d{2}\b/g,' ').replace(/#/g,' # ');
+  const tk=t.split(/[\s\-.,:;]+/).filter(Boolean),KW=/^(?:#|n|no|cap|capitulo|ch|chapter|ep|episodio|episode)$/i;
+  let i=-1;for(let k=0;k<tk.length-1;k++)if(KW.test(tk[k])&&/^\d{1,4}$/.test(tk[k+1])){i=k+1;break}
+  if(i<0)i=tk.findIndex(x=>/^\d{1,4}$/.test(x));
+  if(i<0)return null;
+  const n=parseInt(tk[i],10),resto=tk.filter((x,k)=>k!==i&&!(k===i-1&&KW.test(x))&&!(k>i&&/^\d{1,2}$/.test(x))).join(''),s=normSerie(resto);   // numero solto depois do capitulo ("__1" de arquivo baixado duas vezes) nao faz parte da serie
+  return s.length>=3?{s,n}:null}
+function repsSerie(x){const o=[],mt=x&&x.meta;
+  if(mt&&mt.serie&&mt.numero!==undefined&&String(mt.numero).trim()!==''){const n=parseFloat(String(mt.numero).replace(',','.')),s=normSerie(mt.serie);if(isFinite(n)&&s.length>=3)o.push({s,n})}
+  const r=serieNumDoNome(x&&x.name);if(r)o.push(r);return o}
+// proximo numero MAIOR da mesma serie e do mesmo tipo (HQ/manga) que ja esta na biblioteca; null se nao houver
+async function proxCapitulo(curKey,fallback){
+  const all=await idxAll(),cur=all.find(x=>x.key===curKey)||fallback;if(!cur)return null;
+  const rc=repsSerie(cur);if(!rc.length)return null;let best=null;
+  for(const x of all){if(x.key===curKey||!!x.manga!==!!cur.manga)continue;
+    for(const a of repsSerie(x))for(const c of rc)if(a.s===c.s&&a.n>c.n&&a.n<=c.n+1.0001&&(!best||a.n<best.n))best={n:a.n,it:x}}
+  return best?best.it:null}

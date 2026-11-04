@@ -48,7 +48,7 @@ _m=_re.search(r'(<script id="hqcore" type="text/plain"[^>]*>)(.*?)(</script>)',s
 assert _m,'hqcore'
 src=src[:_m.start(2)]+_core+src[_m.end(2):]
 assert "const VERSAO_PLANO='v9';" in src
-src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v14';")
+src=src.replace("const VERSAO_PLANO='v9';","const VERSAO_PLANO='v28';")
 
 # ---- v0.20: idioma PT/EN, perfil, saudacao, nome ComicXD ----
 import sys as _sys,json as _json
@@ -126,6 +126,7 @@ for _nm,_sig in _lazy:
         if len(_t)>10000 and _sig in _t[:300]+_t[-400:]:_hit=(_m.start(),_m.end(),_e);break
     assert _hit,_nm
     src=src[:_hit[0]]+'<script type="text/plain" data-lazy="'+_nm+'">'+src[_hit[1]:_hit[2]]+src[_hit[2]:]
+
 _boot="""<script>(function(){var N=["pdfjsLib","JSZip","UnrarLib","HQP2P"],E={};function ld(n){var el=E[n];if(!el)return;E[n]=null;try{delete window[n]}catch(e){}(0,eval)(el.textContent);el.textContent=""}
 N.forEach(function(n){var el=document.querySelector('script[data-lazy="'+n+'"]');if(!el)return;E[n]=el;Object.defineProperty(window,n,{configurable:true,get:function(){ld(n);return window[n]},set:function(v){try{delete window[n]}catch(e){}window[n]=v}})});
 function aquece(i){if(i>=N.length)return;var f=function(){try{if(E[N[i]])void window[N[i]]}catch(e){}setTimeout(function(){aquece(i+1)},60)};(window.requestIdleCallback||function(g){setTimeout(g,200)})(f,{timeout:4000})}

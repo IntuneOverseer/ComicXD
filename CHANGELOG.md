@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.74.1 — Windows
+- O programa de Windows (portátil e instalador) agora traz o leitor da **0.74**: leitura guiada mais precisa e o botão de próximo capítulo. A janela, a tela cheia, a atualização automática e o restante do programa são os mesmos da 0.73.1.
+- Quem está na 0.73.1 recebe o aviso de atualização sozinho ao abrir o programa.
+- EN: the Windows app (portable and installer) now ships the **0.74** reader: more accurate guided reading and the next-chapter button. Window, fullscreen, automatic updates and the rest are unchanged from 0.73.1. People on 0.73.1 get the update prompt by themselves when they open the app.
+
+## 0.74
+- **Leitura guiada mais precisa (páginas únicas)**: menos quadros lidos duas vezes, menos balões cortados pela janela de leitura (a janela desliza um pouco para mostrar o balão inteiro, sem perder arte), quadro grande com texto lido em uma linha só quando cabe, quadros que o detector juntava por engano (calha clara entre quadros) separados, e capas e páginas de imagem lidas de forma mais natural. Qualquer ajuste só vale quando não deixa de cobrir o que a leitura anterior cobria.
+- **Páginas duplas**: a leitura guiada agora percorre **4 partes por página (8 no total)**, na ordem certa da dupla, e só usa isso quando nenhum balão fica cortado; senão a página continua como antes.
+- **Próximo capítulo**: ao chegar ao fim de uma HQ, aparece o botão "Ler o próximo capítulo" quando a biblioteca já tem o número seguinte da mesma série (reconhece pelo ComicInfo.xml ou pelo nome do arquivo).
+- O plano das páginas é recalculado uma vez (as HQs já abertas na leitura guiada passam a usar a detecção nova).
+- Limites conhecidos: páginas de créditos e de texto corrido podem ter passos a mais; legenda "CONTINUA" no pé da página ainda pode ser lida antes do quadro de cima em casos raros.
+- Android: versão 0.74 (versionCode 121), mesma assinatura da 0.73.
+- EN: **More accurate guided reading (single pages)**: fewer panels read twice, fewer balloons cut by the reading window (the window slides a little to show the whole balloon, without losing art), a large panel with text read in a single row when it fits, panels the detector used to merge by mistake (light gutter between panels) now separated, and covers and image pages read more naturally. Every adjustment is only accepted when it still covers what the previous reading covered. **Double pages**: guided reading now covers **4 parts per page (8 in total)**, in the right spread order, and only uses it when no balloon ends up cut; otherwise the page is read as before. **Next chapter**: at the end of a comic a "Read the next chapter" button appears when the library already has the next number of the same series (matched by ComicInfo.xml or by file name). The page plans are recalculated once (comics already opened in guided reading use the new detection). Known limits: credits and text-heavy pages may have extra steps; a "CONTINUA" caption at the bottom of a page may rarely be read before the top panel. Android: version 0.74 (versionCode 121), same signature as 0.73.
+
 ## 0.73.1 — Windows
 - **Botão "⬆ Nova versão"**: quando existe versão nova do programa de Windows, aparece um botão fixo no topo, à direita, da biblioteca (some enquanto você lê uma HQ). Ele fica até você atualizar; clicar nele pergunta, baixa, confere o SHA-256, fecha o programa antigo e reabre na versão nova.
 - O programa agora procura versão nova **toda vez que abre** (antes era no máximo a cada 6 horas, e por isso podia passar horas sem avisar) e confere de novo a cada 30 minutos se ficar aberto. A pergunta aparece sozinha **uma vez por versão**; depois o botão continua lá.

@@ -28,6 +28,9 @@
       <div><h3>Menu e tela cheia</h3><p><span class="so-toque">Toque no <b>centro</b> para mostrar as barras: biblioteca, páginas, guiada ou página inteira, <b>Aa</b> e <b>⛶</b> (tela cheia).</span><span class="so-web">As barras ficam sempre visíveis. <b>⛶ Tela cheia</b> (ou tecla <kbd>F</kbd>) deixa só a HQ; clique no centro para ver o menu e <kbd>Esc</kbd> para sair.</span></p></div>
       <div><h3>Zoom livre</h3><p><span class="so-toque"><b>Dois toques no centro</b> ou <b>pinça</b> dão zoom. Arraste para mover.</span><span class="so-web"><b>Ctrl + roda</b> (ou duplo clique) dá zoom; arraste ou use a roda para mover.</span> <span>Dois toques/cliques de novo voltam à página inteira.</span> <span>Funciona também no modo Vertical. No mangá, em Página inteira, a próxima página começa no canto onde a leitura começa (direita no modo Mangá, esquerda no Ocidental).</span></p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li><b>0.74</b> Leitura guiada mais precisa: menos quadros pulados ou repetidos, menos balões cortados, e capas e páginas de imagem lidas de forma mais natural.</li>
+        <li><b>0.74</b> Páginas duplas: a leitura guiada agora percorre 4 partes por página (8 no total), sem cortar balão.</li>
+        <li><b>0.74</b> Ao terminar uma HQ, botão para ler o próximo capítulo da mesma série que já estiver na biblioteca.</li>
         <li>Tom da página agora só no mangá: as HQs ficam mais fluidas com os filtros de cores.</li>
         <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
@@ -53,6 +56,9 @@
       <div><h3>Modos de leitura</h3><p>No menu, troque entre <b>Mangá</b> (direita para esquerda), <b>Ocidental</b>, <b>Vertical</b> e <b>Webtoon</b> (rolagem contínua). O app lembra o modo de cada obra.</p></div>
       <div><h3>Bordas e fundo</h3><p>O botão <b>✂ Cortar bordas</b> tira as margens da página. Em <b>Aa</b> você escolhe o fundo: preto, cinza ou branco.</p></div>
       <div class="nov"><h3>Novidades</h3><ul>
+        <li><b>0.74</b> Leitura guiada mais precisa: menos quadros pulados ou repetidos, menos balões cortados, e capas e páginas de imagem lidas de forma mais natural.</li>
+        <li><b>0.74</b> Páginas duplas: a leitura guiada agora percorre 4 partes por página (8 no total), sem cortar balão.</li>
+        <li><b>0.74</b> Ao terminar uma HQ, botão para ler o próximo capítulo da mesma série que já estiver na biblioteca.</li>
         <li>Tom da página agora só no mangá: as HQs ficam mais fluidas com os filtros de cores.</li>
         <li>Biblioteca: lê o ComicInfo.xml dos CBZ (série, número, autor) e você edita em ⋯ › Editar informações. Nova ordem: Série / número.</li>
         <li>Voltar leva para a biblioteca (HQ e mangá).</li>
@@ -90,6 +96,7 @@
 <div id="fim" hidden role="dialog" aria-live="polite" aria-labelledby="fim-t"><div class="fim-box">
   <div class="fim-i" aria-hidden="true">✓</div>
   <h3 id="fim-t"></h3><p id="fim-p"></p>
+  <button type="button" class="btn" id="fim-prox" hidden></button>
   <button type="button" class="btn" id="fim-lib"></button>
   <button type="button" class="btn ghost" id="fim-x"></button>
 </div></div>
